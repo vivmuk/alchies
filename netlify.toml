@@ -1,8 +1,15 @@
 [build]
   command = "npm run build"
   publish = "build"
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200 
+  status = 200
+
+[dev]
+  functionsPort = 8888
+
+[template.environment]
+  REACT_APP_SITE_URL = "YOUR_NETLIFY_SITE_URL" 

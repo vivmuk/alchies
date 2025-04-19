@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import api from '../../services/api';
 
 // Types
 export interface User {
@@ -9,7 +10,8 @@ export interface User {
 
 export interface RSVP {
   userId: string;
-  status: 'attending' | 'not-attending';
+  name: string;
+  status: 'attending' | 'not-attending' | 'undecided';
   comment?: string;
 }
 
@@ -27,7 +29,35 @@ export interface Event {
   createdAt: string;
   updatedAt: string;
   isArchived: boolean;
+  shareableLink?: string;
 }
+
+// Default users list
+export const defaultUsers: User[] = [
+  { id: '1', name: 'Aubrey' },
+  { id: '2', name: 'Tze' },
+  { id: '3', name: 'Tram' },
+  { id: '4', name: 'Jojo', avatar: 'https://i.pravatar.cc/150?img=4' },
+  { id: '5', name: 'Cameron', avatar: 'https://i.pravatar.cc/150?img=5' },
+  { id: '6', name: 'Cindy' },
+  { id: '7', name: 'Stevie' },
+  { id: '8', name: 'Caden', avatar: 'https://i.pravatar.cc/150?img=8' },
+  { id: '9', name: 'Cara', avatar: 'https://i.pravatar.cc/150?img=9' },
+  { id: '10', name: 'Patti' },
+  { id: '11', name: 'James' },
+  { id: '12', name: 'Moe' },
+  { id: '13', name: 'Venessa' },
+  { id: '14', name: 'Vivek' }
+];
+
+// Helper function to create default RSVPs with undecided status
+export const createDefaultRsvps = (): RSVP[] => {
+  return defaultUsers.map(user => ({
+    userId: user.id,
+    name: user.name,
+    status: 'undecided'
+  }));
+};
 
 interface EventsState {
   events: Event[];
@@ -41,131 +71,94 @@ const initialState: EventsState = {
   error: null
 };
 
-// Sample data for development
-const sampleEvents: Event[] = [
-  {
-    id: '1',
-    title: 'Beach BBQ',
-    date: '2023-06-15',
-    time: '15:00',
-    location: 'Sunny Beach',
-    description: 'Let\'s have a BBQ at the beach! Bring your own drinks.',
-    imageUrl: 'https://images.unsplash.com/photo-1523837157348-ffbdaccfc7de?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-    organizer: {
-      id: '1',
-      name: 'Alex',
-      avatar: 'https://i.pravatar.cc/150?img=1'
-    },
-    rsvps: [
-      { userId: '1', status: 'attending' },
-      { userId: '2', status: 'attending', comment: 'I\'ll bring some snacks!' },
-      { userId: '3', status: 'not-attending', comment: 'Sorry, I can\'t make it this time.' }
-    ],
-    status: 'active',
-    createdAt: '2023-05-01T12:00:00Z',
-    updatedAt: '2023-05-01T12:00:00Z',
-    isArchived: false
-  },
-  {
-    id: '2',
-    title: 'Movie Night',
-    date: '2023-06-20',
-    time: '19:00',
-    location: 'Jamie\'s Place',
-    description: 'We\'ll be watching the new Marvel movie. Popcorn provided!',
-    imageUrl: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-    organizer: {
-      id: '2',
-      name: 'Jamie',
-      avatar: 'https://i.pravatar.cc/150?img=2'
-    },
-    rsvps: [
-      { userId: '1', status: 'attending' },
-      { userId: '2', status: 'attending' },
-      { userId: '4', status: 'attending', comment: 'Looking forward to it!' }
-    ],
-    createdAt: '2023-05-10T14:30:00Z',
-    updatedAt: '2023-05-10T14:30:00Z',
-    isArchived: false
-  },
-  {
-    id: '3',
-    title: 'Game Night',
-    date: '2023-05-05',
-    time: '20:00',
-    location: 'Taylor\'s House',
-    description: 'Board games and snacks!',
-    imageUrl: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-    organizer: {
-      id: '3',
-      name: 'Taylor',
-      avatar: 'https://i.pravatar.cc/150?img=3'
-    },
-    rsvps: [
-      { userId: '1', status: 'attending' },
-      { userId: '3', status: 'attending' },
-      { userId: '4', status: 'not-attending' }
-    ],
-    createdAt: '2023-04-20T10:15:00Z',
-    updatedAt: '2023-04-20T10:15:00Z',
-    isArchived: true
-  }
-];
-
-// Mock API calls
+// Async thunks
 export const fetchEvents = createAsyncThunk(
   'events/fetchEvents',
   async () => {
-    // In a real app, this would be an API call
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    return sampleEvents;
+    try {
+      return await api.events.getAll();
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+      throw error;
+    }
   }
 );
 
 export const addEvent = createAsyncThunk(
   'events/addEvent',
   async (event: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'isArchived'>) => {
-    // In a real app, this would be an API call
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    
-    const newEvent: Event = {
-      ...event,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isArchived: false
-    };
-    
-    return newEvent;
+    try {
+      // Add default RSVPs if not provided
+      if (!event.rsvps || event.rsvps.length === 0) {
+        event.rsvps = createDefaultRsvps();
+      }
+      
+      // Generate shareable link
+      event.shareableLink = `${window.location.origin}/event/${Date.now()}`;
+      
+      return await api.events.create(event);
+    } catch (error) {
+      console.error('Failed to add event:', error);
+      throw error;
+    }
   }
 );
 
 export const updateRSVP = createAsyncThunk(
   'events/updateRSVP',
   async ({ eventId, rsvp }: { eventId: string, rsvp: RSVP }) => {
-    // In a real app, this would be an API call
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    return { eventId, rsvp };
+    try {
+      const event = await api.events.getById(eventId);
+      
+      // Update the RSVP list
+      const existingRSVPIndex = event.rsvps.findIndex(r => r.userId === rsvp.userId);
+      
+      if (existingRSVPIndex >= 0) {
+        event.rsvps[existingRSVPIndex] = rsvp;
+      } else {
+        event.rsvps.push(rsvp);
+      }
+      
+      // Update the event on the server
+      await api.events.update(eventId, { rsvps: event.rsvps });
+      
+      return { eventId, rsvp };
+    } catch (error) {
+      console.error('Failed to update RSVP:', error);
+      throw error;
+    }
   }
 );
 
-export const generateEventImage = createAsyncThunk(
-  'events/generateEventImage',
-  async ({ eventId, prompt }: { eventId: string, prompt: string }) => {
-    // In a real app, this would be an API call to an AI image generation service
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-    
-    // For this demo, we'll just return a random image from Unsplash
-    const images = [
-      'https://source.unsplash.com/random/800x600/?party',
-      'https://source.unsplash.com/random/800x600/?beach',
-      'https://source.unsplash.com/random/800x600/?dinner',
-      'https://source.unsplash.com/random/800x600/?game',
-      'https://source.unsplash.com/random/800x600/?concert'
-    ];
-    
-    const imageUrl = images[Math.floor(Math.random() * images.length)];
-    return { eventId, imageUrl };
+export const uploadEventImage = createAsyncThunk(
+  'events/uploadEventImage',
+  async ({ eventId, file }: { eventId: string, file: File }) => {
+    try {
+      // Upload the image
+      const imageUrl = await api.upload.uploadImage(file);
+      
+      // Update the event with the new image URL
+      await api.events.update(eventId, { imageUrl });
+      
+      return { eventId, imageUrl };
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      throw error;
+    }
+  }
+);
+
+// New action to delete an event (permanent delete)
+export const deleteEvent = createAsyncThunk(
+  'events/deleteEvent',
+  async (eventId: string) => {
+    try {
+      await api.events.delete(eventId);
+      return eventId;
+    } catch (error) {
+      console.error('Failed to delete event:', error);
+      throw error;
+    }
   }
 );
 
@@ -178,6 +171,21 @@ const eventsSlice = createSlice({
       if (event) {
         event.isArchived = true;
         event.updatedAt = new Date().toISOString();
+        
+        // Call the API to update the event
+        api.events.update(action.payload, { isArchived: true })
+          .catch(error => console.error('Failed to archive event:', error));
+      }
+    },
+    unarchiveEvent(state, action: PayloadAction<string>) {
+      const event = state.events.find(event => event.id === action.payload);
+      if (event) {
+        event.isArchived = false;
+        event.updatedAt = new Date().toISOString();
+        
+        // Call the API to update the event
+        api.events.update(action.payload, { isArchived: false })
+          .catch(error => console.error('Failed to unarchive event:', error));
       }
     }
   },
@@ -213,7 +221,7 @@ const eventsSlice = createSlice({
           event.updatedAt = new Date().toISOString();
         }
       })
-      .addCase(generateEventImage.fulfilled, (state, action) => {
+      .addCase(uploadEventImage.fulfilled, (state, action) => {
         const { eventId, imageUrl } = action.payload;
         const event = state.events.find(event => event.id === eventId);
         
@@ -221,10 +229,13 @@ const eventsSlice = createSlice({
           event.imageUrl = imageUrl;
           event.updatedAt = new Date().toISOString();
         }
+      })
+      .addCase(deleteEvent.fulfilled, (state, action) => {
+        state.events = state.events.filter(event => event.id !== action.payload);
       });
   }
 });
 
-export const { archiveEvent } = eventsSlice.actions;
+export const { archiveEvent, unarchiveEvent } = eventsSlice.actions;
 
 export default eventsSlice.reducer; 

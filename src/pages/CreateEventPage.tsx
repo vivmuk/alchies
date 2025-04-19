@@ -1,15 +1,12 @@
 import React, { useState, FormEvent, useRef, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addEvent, Event, User } from '../features/events/eventsSlice';
+import { addEvent, Event, User, defaultUsers } from '../features/events/eventsSlice';
 import { useAppDispatch } from '../app/hooks';
 import BottomNavigation from '../components/BottomNavigation';
+import api from '../services/api';
 
-// Mock current user for demo
-const currentUser: User = {
-  id: '1',
-  name: 'Alex',
-  avatar: 'https://i.pravatar.cc/150?img=1'
-};
+// Default organizer for new events
+const defaultOrganizer: User = defaultUsers[0];
 
 const CreateEventPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -23,10 +20,12 @@ const CreateEventPage: React.FC = () => {
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'active' | 'cancelled'>('active');
+  const [organizer, setOrganizer] = useState<User>(defaultOrganizer);
   
   // Image upload state
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Form validation
   const isFormValid = title && date && time && location;
@@ -61,17 +60,25 @@ const CreateEventPage: React.FC = () => {
     }
   };
   
-  // In a real app, this would upload the image to a server and get a URL back
-  const getImageUrl = async (file: File): Promise<string> => {
-    // This is a mock function - in a real app you would upload to a server
-    // and get back a URL to the stored image
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    });
+  // Handle organizer selection
+  const handleOrganizerChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const userId = e.target.value;
+    const selectedUser = defaultUsers.find(user => user.id === userId) || defaultOrganizer;
+    setOrganizer(selectedUser);
+  };
+  
+  // Upload image to server
+  const uploadImage = async (file: File): Promise<string> => {
+    setIsUploading(true);
+    try {
+      const imageUrl = await api.upload.uploadImage(file);
+      return imageUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   // Handle form submission
@@ -82,26 +89,31 @@ const CreateEventPage: React.FC = () => {
     
     // Process image if one was selected
     let imageUrl;
-    if (imageFile) {
-      imageUrl = await getImageUrl(imageFile);
-    }
-    
-    const newEvent: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'isArchived'> = {
-      title,
-      date,
-      time,
-      location,
-      description,
-      imageUrl,
-      organizer: currentUser,
-      rsvps: [{ userId: currentUser.id, status: 'attending' }],
-      status
-    };
-    
-    const resultAction = await dispatch(addEvent(newEvent));
-    
-    if (addEvent.fulfilled.match(resultAction)) {
-      navigate('/');
+    try {
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
+      
+      const newEvent: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'isArchived'> = {
+        title,
+        date,
+        time,
+        location,
+        description,
+        imageUrl,
+        organizer,
+        rsvps: [], // Default RSVPs will be added by the server
+        status
+      };
+      
+      const resultAction = await dispatch(addEvent(newEvent));
+      
+      if (addEvent.fulfilled.match(resultAction)) {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error creating event:', error);
+      // Handle error (show error message to user)
     }
   };
   
@@ -231,6 +243,25 @@ const CreateEventPage: React.FC = () => {
             />
           </div>
           
+          {/* Organizer */}
+          <div className="space-y-2">
+            <label htmlFor="organizer" className="block text-sm font-medium">
+              Event Organizer
+            </label>
+            <select
+              id="organizer"
+              value={organizer.id}
+              onChange={handleOrganizerChange}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-dark-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/40 focus:border-primary/40 outline-none"
+            >
+              {defaultUsers.map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
           {/* Status */}
           <div className="space-y-2">
             <label className="block text-sm font-medium">
@@ -280,10 +311,10 @@ const CreateEventPage: React.FC = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!isFormValid}
+            disabled={!isFormValid || isUploading}
             className="w-full py-3 bg-primary hover:bg-indigo-600 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Event
+            {isUploading ? 'Uploading...' : 'Create Event'}
           </button>
         </form>
       </main>

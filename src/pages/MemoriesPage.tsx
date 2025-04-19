@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { fetchEvents, Event } from '../features/events/eventsSlice';
+import { fetchEvents, unarchiveEvent, deleteEvent } from '../features/events/eventsSlice';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
 import BottomNavigation from '../components/BottomNavigation';
 
@@ -37,6 +37,20 @@ const MemoriesPage: React.FC = () => {
     const dateB = new Date(b);
     return dateB.getTime() - dateA.getTime();
   });
+  
+  // Handle unarchive event
+  const handleUnarchive = (eventId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    dispatch(unarchiveEvent(eventId));
+  };
+  
+  // Handle delete event
+  const handleDelete = (eventId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to permanently delete this event? This action cannot be undone.')) {
+      dispatch(deleteEvent(eventId));
+    }
+  };
   
   return (
     <div className="min-h-screen bg-background dark:bg-dark-background text-gray-900 dark:text-white pb-16">

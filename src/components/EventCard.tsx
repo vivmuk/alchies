@@ -8,10 +8,11 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
-  const { title, date, time, location, imageUrl, rsvps } = event;
+  const { title, date, time, location, imageUrl, rsvps, status } = event;
   
   const attending = rsvps.filter(rsvp => rsvp.status === 'attending').length;
   const notAttending = rsvps.filter(rsvp => rsvp.status === 'not-attending').length;
+  const undecided = rsvps.filter(rsvp => rsvp.status === 'undecided').length;
   
   // Format date
   const formattedDate = format(new Date(date), 'EEE, MMM d, yyyy');
@@ -24,7 +25,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   
   return (
     <div
-      className="bg-white dark:bg-dark-card rounded-3xl shadow-md hover:shadow-lg overflow-hidden cursor-pointer border border-gray-100 dark:border-gray-800 transition-all duration-300 ease-in-out"
+      className="bg-white dark:bg-dark-card rounded-xl shadow-md hover:shadow-lg overflow-hidden cursor-pointer border border-gray-100 dark:border-gray-800 transition-all duration-300 ease-in-out"
       onClick={onClick}
     >
       <div className="flex flex-col sm:flex-row">
@@ -48,12 +49,17 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-              {isToday && (
-                <span className="px-2 py-1 bg-primary/10 dark:bg-primary/20 text-primary rounded-full text-xs font-medium">Today</span>
-              )}
-              {!isToday && isUpcoming && (
-                <span className="px-2 py-1 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-full text-xs font-medium">Upcoming</span>
-              )}
+              <div className="flex space-x-1">
+                {status === 'cancelled' && (
+                  <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-full text-xs font-medium">Cancelled</span>
+                )}
+                {isToday && (
+                  <span className="px-2 py-1 bg-primary/10 dark:bg-primary/20 text-primary rounded-full text-xs font-medium">Today</span>
+                )}
+                {!isToday && isUpcoming && (
+                  <span className="px-2 py-1 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-full text-xs font-medium">Upcoming</span>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center text-gray-600 dark:text-gray-300 mb-1">
@@ -72,12 +78,12 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
             </div>
           </div>
           
-          <div className="flex justify-between text-sm mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex flex-wrap gap-2 text-sm mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
             <div className="flex items-center text-green-600 dark:text-green-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>{attending} attending</span>
+              <span>{attending} going</span>
             </div>
             
             <div className="flex items-center text-red-600 dark:text-red-400">
@@ -86,6 +92,15 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
               </svg>
               <span>{notAttending} declined</span>
             </div>
+            
+            {undecided > 0 && (
+              <div className="flex items-center text-gray-500 dark:text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{undecided} pending</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
