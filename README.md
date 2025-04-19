@@ -1,46 +1,80 @@
-# Getting Started with Create React App
+# Alchies - Event Planning App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A mobile-first web application for friend groups to plan, track, and remember social meetups.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Event creation with title, date/time, location, and description
+- RSVP tracking (attending/not attending)
+- AI-generated thematic imagery for events
+- Automatic archival of past events to the Memories page
+- Dark/light mode support
+- Mobile-first responsive design
 
-### `npm start`
+## Getting Started
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Prerequisites
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- Node.js (v14 or newer)
+- npm or yarn
 
-### `npm test`
+### Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Clone the repository or download the source code
+2. Navigate to the project directory
+3. Install dependencies
 
-### `npm run build`
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Running the Application
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Start the development server:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+npm start
+```
 
-### `npm run eject`
+The application will be available at `http://localhost:3000`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Building for Production
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+To build the application for production:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```bash
+npm run build
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+The built files will be available in the `build` directory and can be deployed to any static host, including Netlify.
 
-## Learn More
+## Deployment to Netlify
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. Create a free account on Netlify (https://www.netlify.com/)
+2. Connect your Git repository or upload the build folder
+3. Configure the build settings:
+   - Build command: `npm run build`
+   - Publish directory: `build`
+4. Deploy
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Technologies Used
+
+- React with TypeScript
+- Redux Toolkit for state management
+- React Router for navigation
+- Tailwind CSS for styling
+- Date-fns for date formatting
+
+## Future Enhancements
+
+- User authentication
+- Real backend API integration
+- Push notifications
+- Calendar sync
+- Guest list management with contact import
+- Event filtering and search
+- Offline support
+
+## License
+
+This project is licensed under the MIT License.
