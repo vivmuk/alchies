@@ -13,8 +13,9 @@
     "@types/node": "^16.18.61",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
+    "@types/uuid": "^10.0.0",
     "axios": "^1.6.0",
-    "cloudinary": "^2.6.0",
+    "cloudinary": "^1.41.3",
     "date-fns": "^2.30.0",
     "netlify-identity-widget": "^1.9.2",
     "react": "^18.2.0",
@@ -28,7 +29,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "CI=false react-scripts build",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -51,7 +52,6 @@
     ]
   },
   "devDependencies": {
-    "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5"
