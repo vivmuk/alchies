@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
 
 // Mock current user for demo
@@ -11,8 +10,6 @@ const currentUser = {
 };
 
 const ProfilePage: React.FC = () => {
-  const navigate = useNavigate();
-  
   // Mock state for settings
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState({
