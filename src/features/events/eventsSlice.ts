@@ -23,6 +23,7 @@ export interface Event {
   imageUrl?: string;
   organizer: User;
   rsvps: RSVP[];
+  status?: 'active' | 'cancelled';
   createdAt: string;
   updatedAt: string;
   isArchived: boolean;
@@ -60,6 +61,7 @@ const sampleEvents: Event[] = [
       { userId: '2', status: 'attending', comment: 'I\'ll bring some snacks!' },
       { userId: '3', status: 'not-attending', comment: 'Sorry, I can\'t make it this time.' }
     ],
+    status: 'active',
     createdAt: '2023-05-01T12:00:00Z',
     updatedAt: '2023-05-01T12:00:00Z',
     isArchived: false
