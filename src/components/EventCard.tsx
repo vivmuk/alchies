@@ -1,6 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Event } from '../features/events/eventsSlice';
+import ImageWithFallback from './ImageWithFallback';
 
 interface EventCardProps {
   event: Event;
@@ -31,7 +32,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
       <div className="flex flex-col sm:flex-row">
         {imageUrl ? (
           <div className="w-full sm:w-1/3 h-40 sm:h-auto overflow-hidden">
-            <img
+            <ImageWithFallback
               src={imageUrl}
               alt={title}
               className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"

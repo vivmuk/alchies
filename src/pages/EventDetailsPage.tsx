@@ -4,6 +4,7 @@ import { useAppSelector, useAppDispatch } from '../app/hooks';
 import { fetchEvents, updateRSVP, archiveEvent, unarchiveEvent, deleteEvent, defaultUsers } from '../features/events/eventsSlice';
 import { format } from 'date-fns';
 import BottomNavigation from '../components/BottomNavigation';
+import ImageWithFallback from '../components/ImageWithFallback';
 
 const EventDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -155,7 +156,7 @@ const EventDetailsPage: React.FC = () => {
         {/* Event image */}
         {event.imageUrl && (
           <div className="w-full h-48 sm:h-64 mb-6 rounded-xl overflow-hidden">
-            <img
+            <ImageWithFallback
               src={event.imageUrl}
               alt={event.title}
               className="w-full h-full object-cover"
