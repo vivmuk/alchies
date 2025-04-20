@@ -1,82 +1,143 @@
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 import { Event } from '../features/events/eventsSlice';
 
-// Base URL for API calls - works both locally and when deployed
-const API_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:8888/.netlify/functions'
-  : '/.netlify/functions';
-
-// Create axios instance with base config
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// API endpoints for events
-export const eventsApi = {
-  // Get all events
-  getAll: async (): Promise<Event[]> => {
-    const response = await api.get('/events');
-    return response.data;
-  },
-  
-  // Get a single event by ID
-  getById: async (id: string): Promise<Event> => {
-    const response = await api.get(`/events/${id}`);
-    return response.data;
-  },
-  
-  // Create a new event
-  create: async (event: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'isArchived'>): Promise<Event> => {
-    const response = await api.post('/events', event);
-    return response.data;
-  },
-  
-  // Update an event
-  update: async (id: string, event: Partial<Event>): Promise<Event> => {
-    const response = await api.put(`/events/${id}`, event);
-    return response.data;
-  },
-  
-  // Archive (soft delete) an event
-  archive: async (id: string): Promise<void> => {
-    await api.delete(`/events/${id}`);
-  },
-  
-  // Permanently delete an event
-  delete: async (id: string): Promise<void> => {
-    await api.delete(`/events/${id}?permanent=true`);
-  }
+// Mock database for development (would be replaced with actual API calls in production)
+const mockDb = {
+  events: [] as Event[]
 };
 
-// API endpoints for image uploads
-export const uploadApi = {
-  // Upload an image and get the URL
-  uploadImage: async (file: File): Promise<string> => {
-    // Convert file to base64
-    const base64 = await fileToBase64(file);
+// Mock delay to simulate network requests
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// API service for events
+const api = {
+  events: {
+    // Get all events
+    getAll: async (): Promise<Event[]> => {
+      try {
+        // In a real app, this would be an API call
+        // return (await axios.get(`${API_URL}/events`)).data;
+        
+        await delay(500); // Simulate network delay
+        return mockDb.events;
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        return mockDb.events;
+      }
+    },
     
-    // Send to upload function
-    const response = await api.post('/upload', { image: base64 });
+    // Get event by ID
+    getById: async (id: string): Promise<Event> => {
+      try {
+        // In a real app, this would be an API call
+        // return (await axios.get(`${API_URL}/events/${id}`)).data;
+        
+        await delay(300); // Simulate network delay
+        const event = mockDb.events.find(e => e.id === id);
+        if (!event) {
+          throw new Error('Event not found');
+        }
+        return event;
+      } catch (error) {
+        console.error(`Error fetching event ${id}:`, error);
+        throw error;
+      }
+    },
     
-    // Return the URL
-    return response.data.url;
+    // Create a new event
+    create: async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'isArchived'>): Promise<Event> => {
+      try {
+        // In a real app, this would be an API call
+        // return (await axios.post(`${API_URL}/events`, eventData)).data;
+        
+        await delay(500); // Simulate network delay
+        const newEvent: Event = {
+          ...eventData,
+          id: uuidv4(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isArchived: false
+        };
+        
+        mockDb.events.push(newEvent);
+        return newEvent;
+      } catch (error) {
+        console.error('Error creating event:', error);
+        throw error;
+      }
+    },
+    
+    // Update an event
+    update: async (id: string, updates: Partial<Event>): Promise<Event> => {
+      try {
+        // In a real app, this would be an API call
+        // return (await axios.patch(`${API_URL}/events/${id}`, updates)).data;
+        
+        await delay(300); // Simulate network delay
+        const index = mockDb.events.findIndex(e => e.id === id);
+        if (index === -1) {
+          throw new Error('Event not found');
+        }
+        
+        const updatedEvent = {
+          ...mockDb.events[index],
+          ...updates,
+          updatedAt: new Date().toISOString()
+        };
+        
+        mockDb.events[index] = updatedEvent;
+        return updatedEvent;
+      } catch (error) {
+        console.error(`Error updating event ${id}:`, error);
+        throw error;
+      }
+    },
+    
+    // Delete an event
+    delete: async (id: string): Promise<void> => {
+      try {
+        // In a real app, this would be an API call
+        // await axios.delete(`${API_URL}/events/${id}`);
+        
+        await delay(300); // Simulate network delay
+        const index = mockDb.events.findIndex(e => e.id === id);
+        if (index === -1) {
+          throw new Error('Event not found');
+        }
+        
+        mockDb.events.splice(index, 1);
+      } catch (error) {
+        console.error(`Error deleting event ${id}:`, error);
+        throw error;
+      }
+    }
+  },
+  
+  // Upload service
+  upload: {
+    // Upload image to Cloudinary
+    uploadImage: async (file: File): Promise<string> => {
+      try {
+        // Create form data for upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', 'alchies-events');
+        
+        // Upload to Cloudinary
+        const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'di1nyp1bb';
+        const response = await axios.post(
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          formData
+        );
+        
+        return response.data.secure_url;
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        throw error;
+      }
+    }
   }
 };
 
-// Helper function to convert a file to base64
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
-};
-
-export default {
-  events: eventsApi,
-  upload: uploadApi
-}; 
+export default api; 

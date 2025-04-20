@@ -3,19 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fetchEvents, unarchiveEvent, deleteEvent, Event } from '../features/events/eventsSlice';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
+import { RootState } from '../app/store';
 import BottomNavigation from '../components/BottomNavigation';
-
-// Define EventsState interface to match state
-interface EventsState {
-  events: Event[];
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
-  error: string | null;
-}
 
 const MemoriesPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { events, status, error } = useAppSelector(state => state.events);
+  const { events, status, error } = useAppSelector((state: RootState) => state.events);
   
   useEffect(() => {
     if (status === 'idle') {
@@ -23,9 +17,10 @@ const MemoriesPage: React.FC = () => {
     }
   }, [status, dispatch]);
   
-  const archivedEvents = events.filter(event => event.isArchived);
+  const archivedEvents = events.filter((event: Event) => event.isArchived);
   
-  // Group events by month and year
+  // Group events by month and year (for future functionality)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const groupedEvents: Record<string, Event[]> = archivedEvents.reduce((acc: Record<string, Event[]>, event: Event) => {
     const date = new Date(event.date);
     const monthYear = format(date, 'MMMM yyyy');
@@ -37,13 +32,6 @@ const MemoriesPage: React.FC = () => {
     acc[monthYear].push(event);
     return acc;
   }, {} as Record<string, Event[]>);
-  
-  // Sort month-year groups by date (newest first)
-  const sortedMonthYears = Object.keys(groupedEvents).sort((a, b) => {
-    const dateA = new Date(a);
-    const dateB = new Date(b);
-    return dateB.getTime() - dateA.getTime();
-  });
   
   // Handle unarchive event
   const handleUnarchive = (eventId: string, e: React.MouseEvent) => {

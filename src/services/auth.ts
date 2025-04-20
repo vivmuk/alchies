@@ -36,12 +36,12 @@ const authService = {
 
   // Open the login modal
   login: () => {
-    netlifyIdentity.open('login');
+    netlifyIdentity.open();
   },
 
   // Open the signup modal
   signup: () => {
-    netlifyIdentity.open('signup');
+    netlifyIdentity.open();
   },
 
   // Logout the current user
@@ -86,7 +86,13 @@ const authService = {
     const user = netlifyIdentity.currentUser();
     if (!user) return null;
     
-    return user.jwt();
+    try {
+      // Use refresh to get the current JWT token
+      return await netlifyIdentity.refresh();
+    } catch (error) {
+      console.error('Failed to get token:', error);
+      return null;
+    }
   }
 };
 

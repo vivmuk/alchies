@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
-import { fetchEvents, updateRSVP, archiveEvent, unarchiveEvent, deleteEvent, Event, defaultUsers } from '../features/events/eventsSlice';
+import { fetchEvents, updateRSVP, archiveEvent, unarchiveEvent, deleteEvent, defaultUsers } from '../features/events/eventsSlice';
 import { format } from 'date-fns';
 import BottomNavigation from '../components/BottomNavigation';
 
