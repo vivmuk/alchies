@@ -1,14 +1,11 @@
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { Event } from '../features/events/eventsSlice';
+import { db } from './firebase';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 
-// Mock database for development (would be replaced with actual API calls in production)
-const mockDb = {
-  events: [] as Event[]
-};
-
-// Mock delay to simulate network requests
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Collection references
+const eventsCollection = collection(db, 'events');
 
 // API service for events
 const api = {
@@ -16,15 +13,17 @@ const api = {
     // Get all events
     getAll: async (): Promise<Event[]> => {
       try {
-        // In a real app, this would be an API call
-        // return (await axios.get(`${API_URL}/events`)).data;
+        // Query events collection, ordered by date
+        const eventsQuery = query(eventsCollection, orderBy('date', 'asc'));
+        const querySnapshot = await getDocs(eventsQuery);
         
-        await delay(500); // Simulate network delay
-        // Ensure events is an extensible array
-        if (!Array.isArray(mockDb.events) || Object.isExtensible(mockDb.events) === false) {
-          mockDb.events = [...mockDb.events];
-        }
-        return mockDb.events;
+        // Convert the query snapshot to an array of events
+        const events = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Event[];
+        
+        return events;
       } catch (error) {
         console.error('Error fetching events:', error);
         return [];
@@ -34,15 +33,13 @@ const api = {
     // Get event by ID
     getById: async (id: string): Promise<Event> => {
       try {
-        // In a real app, this would be an API call
-        // return (await axios.get(`${API_URL}/events/${id}`)).data;
+        const eventDoc = await getDoc(doc(db, 'events', id));
         
-        await delay(300); // Simulate network delay
-        const event = mockDb.events.find(e => e.id === id);
-        if (!event) {
+        if (!eventDoc.exists()) {
           throw new Error('Event not found');
         }
-        return event;
+        
+        return { id: eventDoc.id, ...eventDoc.data() } as Event;
       } catch (error) {
         console.error(`Error fetching event ${id}:`, error);
         throw error;
@@ -52,25 +49,23 @@ const api = {
     // Create a new event
     create: async (eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'isArchived'>): Promise<Event> => {
       try {
-        // In a real app, this would be an API call
-        // return (await axios.post(`${API_URL}/events`, eventData)).data;
+        const timestamp = new Date().toISOString();
         
-        await delay(500); // Simulate network delay
-        const newEvent: Event = {
+        const newEvent = {
           ...eventData,
-          id: uuidv4(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: timestamp,
+          updatedAt: timestamp,
           isArchived: false
         };
         
-        // Ensure events is an extensible array before pushing
-        if (!Array.isArray(mockDb.events) || Object.isExtensible(mockDb.events) === false) {
-          mockDb.events = [...(mockDb.events || [])];
-        }
+        // Add the document to Firestore
+        const docRef = await addDoc(eventsCollection, newEvent);
         
-        mockDb.events.push(newEvent);
-        return newEvent;
+        // Return the event with the generated ID
+        return {
+          id: docRef.id,
+          ...newEvent
+        } as Event;
       } catch (error) {
         console.error('Error creating event:', error);
         throw error;
@@ -80,22 +75,32 @@ const api = {
     // Update an event
     update: async (id: string, updates: Partial<Event>): Promise<Event> => {
       try {
-        // In a real app, this would be an API call
-        // return (await axios.patch(`${API_URL}/events/${id}`, updates)).data;
+        const eventRef = doc(db, 'events', id);
+        const eventSnapshot = await getDoc(eventRef);
         
-        await delay(300); // Simulate network delay
-        const index = mockDb.events.findIndex(e => e.id === id);
-        if (index === -1) {
+        if (!eventSnapshot.exists()) {
           throw new Error('Event not found');
         }
         
+        // Get the current event data
+        const currentEvent = { 
+          id: eventSnapshot.id, 
+          ...eventSnapshot.data() 
+        } as Event;
+        
+        // Create the updated event
         const updatedEvent = {
-          ...mockDb.events[index],
+          ...currentEvent,
           ...updates,
           updatedAt: new Date().toISOString()
         };
         
-        mockDb.events[index] = updatedEvent;
+        // Remove the id field before updating (Firestore doesn't need it in the document data)
+        const { id: _, ...updateData } = updatedEvent;
+        
+        // Update the document in Firestore
+        await updateDoc(eventRef, updateData);
+        
         return updatedEvent;
       } catch (error) {
         console.error(`Error updating event ${id}:`, error);
@@ -106,16 +111,7 @@ const api = {
     // Delete an event
     delete: async (id: string): Promise<void> => {
       try {
-        // In a real app, this would be an API call
-        // await axios.delete(`${API_URL}/events/${id}`);
-        
-        await delay(300); // Simulate network delay
-        const index = mockDb.events.findIndex(e => e.id === id);
-        if (index === -1) {
-          throw new Error('Event not found');
-        }
-        
-        mockDb.events.splice(index, 1);
+        await deleteDoc(doc(db, 'events', id));
       } catch (error) {
         console.error(`Error deleting event ${id}:`, error);
         throw error;

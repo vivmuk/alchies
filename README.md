@@ -120,3 +120,27 @@ For a more permanent storage solution, you could modify the functions to use:
 - [React Documentation](https://reactjs.org/docs/getting-started.html)
 - [Redux Toolkit Documentation](https://redux-toolkit.js.org/introduction/getting-started)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+
+## Firebase Setup
+
+To enable data persistence, follow these steps:
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Click "Add project" and follow the setup wizard
+3. Once your project is created, click "Web" (</>) to add a web app
+4. Register your app with a nickname (e.g., "alchies-web")
+5. Copy the Firebase configuration object
+6. Open `src/services/firebase.ts` and replace the placeholder values with your actual Firebase config
+7. In Firebase Console, go to "Firestore Database" and click "Create database"
+8. Choose "Start in test mode" for development (you can set up rules later)
+9. Select a location close to your users
+10. Click "Enable"
+
+Your app now uses Firestore for data persistence. Events will be stored in the cloud and be available across browser refreshes and between different users.
+
+## Security Note
+
+For production, you should:
+1. Set up proper Firestore security rules
+2. Consider adding authentication
+3. Move Firebase API keys to environment variables
