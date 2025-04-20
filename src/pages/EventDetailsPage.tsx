@@ -5,6 +5,7 @@ import { fetchEvents, updateRSVP, archiveEvent, unarchiveEvent, deleteEvent, def
 import { format, parseISO } from 'date-fns';
 import BottomNavigation from '../components/BottomNavigation';
 import ImageWithFallback from '../components/ImageWithFallback';
+import updateEvent from '../features/events/updateEvent';
 
 const EventDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,11 +18,24 @@ const EventDetailsPage: React.FC = () => {
   const [rsvpComments, setRsvpComments] = useState<Record<string, string>>({});
   const [editingComment, setEditingComment] = useState<string | null>(null);
   
+  // Date and time editing states
+  const [isEditingDateTime, setIsEditingDateTime] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [editDateSuccess, setEditDateSuccess] = useState<string>('');
+  
   useEffect(() => {
     if (status === 'idle') {
       dispatch(fetchEvents());
     }
   }, [status, dispatch]);
+  
+  useEffect(() => {
+    if (event) {
+      setNewDate(event.date);
+      setNewTime(event.time);
+    }
+  }, [event]);
   
   // Helper function to format date
   const formatDate = (date: string) => {
@@ -94,6 +108,35 @@ const EventDetailsPage: React.FC = () => {
     }));
     
     setEditingComment(null);
+  };
+  
+  // Toggle date and time edit mode
+  const toggleDateTimeEdit = () => {
+    setIsEditingDateTime(!isEditingDateTime);
+    if (!isEditingDateTime) {
+      setNewDate(event?.date || '');
+      setNewTime(event?.time || '');
+    }
+    setEditDateSuccess('');
+  };
+  
+  // Handle date and time update
+  const handleUpdateDateTime = () => {
+    if (!event) return;
+    
+    dispatch(updateEvent({
+      id: event.id,
+      updates: {
+        date: newDate,
+        time: newTime
+      }
+    })).then((result) => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        setIsEditingDateTime(false);
+        setEditDateSuccess('Date and time updated successfully!');
+        setTimeout(() => setEditDateSuccess(''), 2000);
+      }
+    });
   };
   
   // Handle archive/unarchive event
@@ -187,11 +230,61 @@ const EventDetailsPage: React.FC = () => {
         <div className="bg-white dark:bg-dark-card rounded-xl p-6 shadow-md mb-6">
           <h2 className="text-2xl font-bold mb-2">{event.title}</h2>
           
-          <div className="flex items-center text-gray-600 dark:text-gray-300 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span>{formatDate(event.date)} • {event.time}</span>
+          <div className="flex flex-col mb-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center text-gray-600 dark:text-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {isEditingDateTime ? (
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex space-x-2">
+                      <input 
+                        type="date"
+                        value={newDate}
+                        onChange={(e) => setNewDate(e.target.value)}
+                        className="p-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-dark-surface text-gray-900 dark:text-white"
+                      />
+                      <input 
+                        type="time"
+                        value={newTime}
+                        onChange={(e) => setNewTime(e.target.value)}
+                        className="p-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-dark-surface text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={handleUpdateDateTime}
+                        className="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-indigo-600"
+                      >
+                        Save
+                      </button>
+                      <button 
+                        onClick={toggleDateTimeEdit}
+                        className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col">
+                    <span>{formatDate(event.date)} • {event.time}</span>
+                    {editDateSuccess && (
+                      <span className="text-green-600 dark:text-green-400 text-xs mt-1">{editDateSuccess}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              {!isEditingDateTime && (
+                <button 
+                  onClick={toggleDateTimeEdit}
+                  className="text-primary hover:text-indigo-700 text-sm"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center text-gray-600 dark:text-gray-300 mb-4">
