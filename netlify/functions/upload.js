@@ -4,9 +4,9 @@ const { v4: uuidv4 } = require('uuid');
 
 // Configure Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: 'di1nyp1bb',
+  api_key: '797786557437997',
+  api_secret: 'OERwE_u2Cik88JtQk57eLSiLfos',
   secure: true
 });
 
