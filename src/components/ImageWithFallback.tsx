@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Default fallback images if the primary image fails to load
 const fallbackImages = [
@@ -23,22 +23,53 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   fallbackSrc
 }) => {
   const [error, setError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string | undefined>(src);
+  
+  // Reset error state when src changes
+  useEffect(() => {
+    setError(false);
+    setLoaded(false);
+    setCurrentSrc(src);
+  }, [src]);
   
   // Choose a random fallback image if none is provided
   const defaultFallback = fallbackSrc || 
     fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
   
-  // Use the fallback if there was an error or no source was provided
-  const imageSrc = (!src || error) ? defaultFallback : src;
+  // Handle image load errors
+  const handleError = () => {
+    console.log(`Image load error for: ${currentSrc}`);
+    if (!error) {
+      setError(true);
+      setCurrentSrc(defaultFallback);
+    }
+  };
+  
+  // Handle image load success
+  const handleLoad = () => {
+    setLoaded(true);
+  };
+  
+  // Show a loading state if the image is still loading
+  const showLoadingState = !loaded && !error;
   
   return (
-    <img
-      src={imageSrc}
-      alt={alt}
-      className={className}
-      onError={() => setError(true)}
-      loading="lazy"
-    />
+    <>
+      {showLoadingState && (
+        <div className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${className}`}>
+          <div className="animate-pulse w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+        </div>
+      )}
+      <img
+        src={error ? defaultFallback : currentSrc}
+        alt={alt}
+        className={`${className} ${showLoadingState ? 'hidden' : ''}`}
+        onError={handleError}
+        onLoad={handleLoad}
+        loading="lazy"
+      />
+    </>
   );
 };
 
