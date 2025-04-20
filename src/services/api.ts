@@ -116,22 +116,26 @@ const api = {
   
   // Upload service
   upload: {
-    // Upload image to Cloudinary
+    // Upload image to Cloudinary via Netlify function
     uploadImage: async (file: File): Promise<string> => {
       try {
-        // Create form data for upload
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', 'alchies-events');
+        // Read file as data URL
+        const reader = new FileReader();
+        const fileDataPromise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
         
-        // Upload to Cloudinary
-        const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'di1nyp1bb';
+        const fileData = await fileDataPromise;
+        
+        // Send image data to Netlify serverless function
         const response = await axios.post(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          formData
+          '/.netlify/functions/upload',
+          { image: fileData }
         );
         
-        return response.data.secure_url;
+        return response.data.url;
       } catch (error) {
         console.error('Error uploading image:', error);
         throw error;

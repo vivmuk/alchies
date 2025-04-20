@@ -278,6 +278,13 @@ const EventDetailsPage: React.FC = () => {
         {/* Event Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
+            onClick={() => navigate(`/edit-event/${event.id}`)}
+            className="flex-1 py-3 bg-primary hover:bg-indigo-600 text-white font-semibold rounded-xl transition"
+          >
+            Edit Event
+          </button>
+          
+          <button
             onClick={handleArchiveToggle}
             className={`flex-1 py-3 font-semibold rounded-xl transition ${
               event.isArchived

@@ -1,6 +1,6 @@
 import React, { useState, FormEvent, useRef, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addEvent, Event, User, defaultUsers } from '../features/events/eventsSlice';
+import { addEvent, Event, User, defaultUsers, RSVP } from '../features/events/eventsSlice';
 import { useAppDispatch } from '../app/hooks';
 import BottomNavigation from '../components/BottomNavigation';
 import api from '../services/api';
@@ -26,6 +26,15 @@ const CreateEventPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Attendees state
+  const [attendees, setAttendees] = useState<RSVP[]>(
+    defaultUsers.map(user => ({
+      userId: user.id,
+      name: user.name,
+      status: 'undecided'
+    }))
+  );
   
   // Form validation
   const isFormValid = title && date && time && location;
@@ -66,6 +75,17 @@ const CreateEventPage: React.FC = () => {
     const selectedUser = defaultUsers.find(user => user.id === userId) || defaultOrganizer;
     setOrganizer(selectedUser);
   };
+
+  // Handle attendee status change
+  const handleAttendeeStatusChange = (userId: string, status: 'attending' | 'not-attending' | 'undecided') => {
+    setAttendees(prevAttendees => 
+      prevAttendees.map(attendee => 
+        attendee.userId === userId 
+          ? { ...attendee, status } 
+          : attendee
+      )
+    );
+  };
   
   // Upload image to server
   const uploadImage = async (file: File): Promise<string> => {
@@ -102,7 +122,7 @@ const CreateEventPage: React.FC = () => {
         description,
         imageUrl,
         organizer,
-        rsvps: [], // Default RSVPs will be added by the server
+        rsvps: attendees, // Use the selected attendees instead of default
         status
       };
       
@@ -260,6 +280,55 @@ const CreateEventPage: React.FC = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Attendees */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium mb-2">
+              Attendees
+            </label>
+            <div className="bg-white dark:bg-dark-surface rounded-xl border border-gray-300 dark:border-gray-600 p-4 max-h-60 overflow-y-auto">
+              {attendees.map(attendee => (
+                <div key={attendee.userId} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                  <span>{attendee.name}</span>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAttendeeStatusChange(attendee.userId, 'attending')}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                        attendee.status === 'attending' 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      Attending
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAttendeeStatusChange(attendee.userId, 'not-attending')}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                        attendee.status === 'not-attending' 
+                          ? 'bg-red-500 text-white' 
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      Not Attending
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAttendeeStatusChange(attendee.userId, 'undecided')}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                        attendee.status === 'undecided' 
+                          ? 'bg-yellow-500 text-white' 
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      Undecided
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
           
           {/* Status */}
