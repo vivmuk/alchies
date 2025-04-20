@@ -7,6 +7,7 @@ import { RootState } from '../app/store';
 import BottomNavigation from '../components/BottomNavigation';
 import api from '../services/api';
 import ImageWithFallback from '../components/ImageWithFallback';
+import { parseISO, format } from 'date-fns';
 
 // Default organizer for new events
 const defaultOrganizer: User = defaultUsers[0];
@@ -158,9 +159,12 @@ const CreateEventPage: React.FC = () => {
         imageUrl = await uploadImage(imageFile);
       }
       
+      // Ensure date is in ISO format YYYY-MM-DD
+      const formattedDate = date;
+      
       const eventData = {
         title,
-        date,
+        date: formattedDate,
         time,
         location,
         description,

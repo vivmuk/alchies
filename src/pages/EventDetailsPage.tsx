@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
 import { fetchEvents, updateRSVP, archiveEvent, unarchiveEvent, deleteEvent, defaultUsers, RSVP, Event } from '../features/events/eventsSlice';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import BottomNavigation from '../components/BottomNavigation';
 import ImageWithFallback from '../components/ImageWithFallback';
 
@@ -25,7 +25,7 @@ const EventDetailsPage: React.FC = () => {
   
   // Helper function to format date
   const formatDate = (date: string) => {
-    return format(new Date(date), 'EEEE, MMMM d, yyyy');
+    return format(parseISO(date), 'EEEE, MMMM d, yyyy');
   };
   
   // Handle copy shareable link

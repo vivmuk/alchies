@@ -1,5 +1,5 @@
 import React from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Event } from '../features/events/eventsSlice';
 import ImageWithFallback from './ImageWithFallback';
 
@@ -15,14 +15,19 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   const notAttending = rsvps.filter(rsvp => rsvp.status === 'not-attending').length;
   const undecided = rsvps.filter(rsvp => rsvp.status === 'undecided').length;
   
-  // Format date
-  const formattedDate = format(new Date(date), 'EEE, MMM d, yyyy');
+  // Format date - fixed to handle timezone issues
+  const eventDate = parseISO(date);
+  const formattedDate = format(eventDate, 'EEE, MMM d, yyyy');
   
-  // Calculate if event is today
-  const isToday = new Date(date).toDateString() === new Date().toDateString();
+  // Calculate if event is today - fixed to handle timezone issues
+  const today = new Date();
+  const isToday = 
+    eventDate.getDate() === today.getDate() &&
+    eventDate.getMonth() === today.getMonth() &&
+    eventDate.getFullYear() === today.getFullYear();
   
-  // Calculate if event is within next 3 days
-  const isUpcoming = new Date(date).getTime() - new Date().getTime() < 3 * 24 * 60 * 60 * 1000;
+  // Calculate if event is within next 3 days - fixed to avoid timezone issues
+  const isUpcoming = eventDate.getTime() - today.getTime() < 3 * 24 * 60 * 60 * 1000;
   
   return (
     <div

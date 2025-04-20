@@ -4,12 +4,13 @@ import { fetchEvents, Event } from '../features/events/eventsSlice';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
 import BottomNavigation from '../components/BottomNavigation';
 import EventCard from '../components/EventCard';
+import { parseISO } from 'date-fns';
 
 const sortEventsByDate = (events: Event[]): Event[] => {
   return [...events].sort((a, b) => {
-    // Convert date strings to Date objects for comparison
-    const dateA = new Date(`${a.date}T${a.time}`);
-    const dateB = new Date(`${b.date}T${b.time}`);
+    // Convert date strings to Date objects for comparison using parseISO
+    const dateA = parseISO(`${a.date}T${a.time}`);
+    const dateB = parseISO(`${b.date}T${a.time}`);
     return dateA.getTime() - dateB.getTime();
   });
 };
@@ -17,7 +18,7 @@ const sortEventsByDate = (events: Event[]): Event[] => {
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { events, status, error } = useAppSelector((state) => state.events);
+  const { events, status, error } = useAppSelector((state: any) => state.events);
   const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
   
   // Apply dark mode on component mount
@@ -35,10 +36,14 @@ const HomePage: React.FC = () => {
     }
   }, [status, dispatch]);
   
-  const upcomingEvents = sortEventsByDate(events.filter(event => 
-    !event.isArchived && 
-    new Date(`${event.date}T${event.time}`) >= new Date()
-  ));
+  const upcomingEvents = sortEventsByDate(events.filter(event => {
+    if (!event || event.isArchived) return false;
+    
+    // Parse date properly to avoid timezone issues
+    const eventDate = parseISO(event.date);
+    const today = new Date();
+    return eventDate >= today;
+  }));
   
   // Toggle dark mode
   const toggleDarkMode = () => {
