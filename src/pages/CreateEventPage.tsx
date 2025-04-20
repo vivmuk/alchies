@@ -1,9 +1,10 @@
-import React, { useState, FormEvent, useRef, ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { addEvent, Event, User, defaultUsers, RSVP } from '../features/events/eventsSlice';
-import { useAppDispatch } from '../app/hooks';
+import React, { useState, FormEvent, useRef, ChangeEvent, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { addEvent, updateEvent, fetchEvents, Event, User, defaultUsers, RSVP } from '../features/events/eventsSlice';
+import { useAppDispatch, useAppSelector } from '../app/hooks';
 import BottomNavigation from '../components/BottomNavigation';
 import api from '../services/api';
+import ImageWithFallback from '../components/ImageWithFallback';
 
 // Default organizer for new events
 const defaultOrganizer: User = defaultUsers[0];
@@ -11,7 +12,13 @@ const defaultOrganizer: User = defaultUsers[0];
 const CreateEventPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { events } = useAppSelector((state) => state.events);
+  
+  // Determine if we're editing an existing event
+  const isEditMode = !!id;
+  const existingEvent = isEditMode ? events.find(event => event.id === id) : null;
   
   // Form state
   const [title, setTitle] = useState('');
@@ -26,6 +33,7 @@ const CreateEventPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | undefined>(undefined);
 
   // Attendees state
   const [attendees, setAttendees] = useState<RSVP[]>(
@@ -35,6 +43,39 @@ const CreateEventPage: React.FC = () => {
       status: 'undecided'
     }))
   );
+
+  // Load existing event data if in edit mode
+  useEffect(() => {
+    if (existingEvent) {
+      setTitle(existingEvent.title);
+      setDate(existingEvent.date);
+      setTime(existingEvent.time);
+      setLocation(existingEvent.location);
+      setDescription(existingEvent.description || '');
+      setStatus(existingEvent.status || 'active');
+      setOrganizer(existingEvent.organizer);
+      setAttendees(existingEvent.rsvps);
+      
+      if (existingEvent.imageUrl) {
+        setExistingImageUrl(existingEvent.imageUrl);
+        setImagePreview(existingEvent.imageUrl);
+      }
+    }
+  }, [existingEvent]);
+  
+  // Debug existing event data
+  useEffect(() => {
+    if (isEditMode) {
+      console.log('Edit mode activated for event ID:', id);
+      console.log('Found existing event:', existingEvent);
+      
+      // Force reload of events if we don't have them yet
+      if (!existingEvent && events.length === 0) {
+        console.log('No events loaded yet, fetching events...');
+        dispatch(fetchEvents());
+      }
+    }
+  }, [isEditMode, id, existingEvent, events.length, dispatch]);
   
   // Form validation
   const isFormValid = title && date && time && location;
@@ -64,6 +105,7 @@ const CreateEventPage: React.FC = () => {
   const removeImage = () => {
     setImagePreview(null);
     setImageFile(null);
+    setExistingImageUrl(undefined);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -107,14 +149,14 @@ const CreateEventPage: React.FC = () => {
     
     if (!isFormValid) return;
     
-    // Process image if one was selected
-    let imageUrl;
     try {
+      // Process image if one was selected
+      let imageUrl = existingImageUrl;
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
       
-      const newEvent: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'isArchived'> = {
+      const eventData = {
         title,
         date,
         time,
@@ -122,17 +164,29 @@ const CreateEventPage: React.FC = () => {
         description,
         imageUrl,
         organizer,
-        rsvps: attendees, // Use the selected attendees instead of default
+        rsvps: attendees,
         status
       };
       
-      const resultAction = await dispatch(addEvent(newEvent));
+      let resultAction;
       
-      if (addEvent.fulfilled.match(resultAction)) {
-        navigate('/');
+      if (isEditMode && existingEvent) {
+        // Update existing event
+        resultAction = await dispatch(updateEvent({
+          id: existingEvent.id,
+          updates: eventData
+        }));
+      } else {
+        // Create new event
+        resultAction = await dispatch(addEvent(eventData));
+      }
+      
+      // Navigate back to home or event details on success
+      if (resultAction.meta.requestStatus === 'fulfilled') {
+        navigate(isEditMode ? `/event/${id}` : '/');
       }
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} event:`, error);
       // Handle error (show error message to user)
     }
   };
@@ -141,14 +195,14 @@ const CreateEventPage: React.FC = () => {
     <div className="min-h-screen bg-background dark:bg-dark-background text-gray-900 dark:text-white pb-16">
       <header className="sticky top-0 bg-white dark:bg-dark-card shadow-md p-4 z-10 flex items-center border-b border-gray-200 dark:border-gray-700">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(isEditMode ? `/event/${id}` : '/')}
           className="mr-4"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-xl font-bold">Create Event</h1>
+        <h1 className="text-xl font-bold">{isEditMode ? 'Edit Event' : 'Create Event'}</h1>
       </header>
       
       <main className="container mx-auto px-4 py-6">
@@ -165,7 +219,7 @@ const CreateEventPage: React.FC = () => {
             >
               {imagePreview ? (
                 <>
-                  <img
+                  <ImageWithFallback
                     src={imagePreview}
                     alt="Preview"
                     className="w-full h-full object-cover"
@@ -383,7 +437,7 @@ const CreateEventPage: React.FC = () => {
             disabled={!isFormValid || isUploading}
             className="w-full py-3 bg-primary hover:bg-indigo-600 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isUploading ? 'Uploading...' : 'Create Event'}
+            {isUploading ? 'Uploading...' : (isEditMode ? 'Update Event' : 'Create Event')}
           </button>
         </form>
       </main>

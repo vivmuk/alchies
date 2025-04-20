@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchEvents } from '../features/events/eventsSlice';
+import { fetchEvents, Event } from '../features/events/eventsSlice';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
 import BottomNavigation from '../components/BottomNavigation';
 import EventCard from '../components/EventCard';
+
+const sortEventsByDate = (events: Event[]): Event[] => {
+  return [...events].sort((a, b) => {
+    // Convert date strings to Date objects for comparison
+    const dateA = new Date(`${a.date}T${a.time}`);
+    const dateB = new Date(`${b.date}T${b.time}`);
+    return dateA.getTime() - dateB.getTime();
+  });
+};
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -26,7 +35,10 @@ const HomePage: React.FC = () => {
     }
   }, [status, dispatch]);
   
-  const upcomingEvents = events.filter(event => !event.isArchived);
+  const upcomingEvents = sortEventsByDate(events.filter(event => 
+    !event.isArchived && 
+    new Date(`${event.date}T${event.time}`) >= new Date()
+  ));
   
   // Toggle dark mode
   const toggleDarkMode = () => {

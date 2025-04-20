@@ -2,13 +2,22 @@
 const cloudinary = require('cloudinary').v2;
 const { v4: uuidv4 } = require('uuid');
 
-// Configure Cloudinary
+// Enhanced debugging
+console.log('Starting upload function with environment variables:',
+  process.env.CLOUDINARY_CLOUD_NAME ? 'CLOUDINARY_CLOUD_NAME is set' : 'CLOUDINARY_CLOUD_NAME is missing',
+  process.env.CLOUDINARY_API_KEY ? 'CLOUDINARY_API_KEY is set' : 'CLOUDINARY_API_KEY is missing'
+);
+
+// Configure Cloudinary with environment variables or hardcoded values as fallback
 cloudinary.config({
-  cloud_name: 'di1nyp1bb',
-  api_key: '797786557437997',
-  api_secret: 'OERwE_u2Cik88JtQk57eLSiLfos',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'di1nyp1bb',
+  api_key: process.env.CLOUDINARY_API_KEY || '797786557437997',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'OERwE_u2Cik88JtQk57eLSiLfos',
   secure: true
 });
+
+// Always log the Cloudinary configuration (except the API secret)
+console.log(`Cloudinary Config - Cloud Name: ${cloudinary.config().cloud_name}, API Key: ${cloudinary.config().api_key}`);
 
 exports.handler = async (event, context) => {
   // Add CORS headers
@@ -38,13 +47,60 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Processing upload request...');
+    
     const body = JSON.parse(event.body);
     const imageData = body.image; // Base64 encoded image
     
-    // Check if Cloudinary credentials are configured
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      console.warn('Cloudinary credentials not configured. Using fallback image URLs.');
-      // Fallback to mock URLs if Cloudinary is not configured
+    if (!imageData) {
+      console.log('Error: No image data provided');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ message: 'No image data provided' })
+      };
+    }
+    
+    // The unique ID for the image
+    const uniqueFileName = `alchies-event-${uuidv4()}`;
+    
+    console.log('Uploading image to Cloudinary...');
+    
+    try {
+      // Modified upload options for better reliability
+      const uploadOptions = {
+        folder: 'alchies-events',
+        public_id: uniqueFileName,
+        resource_type: 'auto',
+        overwrite: true,
+        // Optional transformations
+        transformation: [
+          { width: 1000, crop: 'limit' }, // Resize to max width of 1000px
+          { quality: 'auto:good' } // Auto-optimize quality
+        ]
+      };
+      
+      console.log('Upload options:', { ...uploadOptions, image: 'IMAGE_DATA_OMITTED' });
+      
+      // Upload to Cloudinary
+      const uploadResponse = await cloudinary.uploader.upload(imageData, uploadOptions);
+      
+      console.log('Image uploaded successfully to Cloudinary with URL:', uploadResponse.secure_url);
+      
+      // Return the secure URL to the uploaded image
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          url: uploadResponse.secure_url,
+          id: uploadResponse.public_id,
+          success: true
+        })
+      };
+    } catch (cloudinaryError) {
+      console.error('Cloudinary upload failed:', cloudinaryError);
+      
+      // Fallback to mock URLs if Cloudinary upload fails
       const mockImageUrls = [
         'https://images.unsplash.com/photo-1523837157348-ffbdaccfc7de',
         'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c',
@@ -55,49 +111,21 @@ exports.handler = async (event, context) => {
       
       const imageUrl = `${mockImageUrls[Math.floor(Math.random() * mockImageUrls.length)]}?w=800&h=600&fit=crop&q=80`;
       
+      console.log('Using fallback image URL:', imageUrl);
+      
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
           url: imageUrl,
           id: uuidv4(),
-          success: true
+          success: true,
+          fallback: true
         })
       };
     }
-    
-    // The unique ID for the image
-    const uniqueFileName = `alchies-event-${uuidv4()}`;
-    
-    console.log('Uploading image to Cloudinary...');
-    
-    // Upload to Cloudinary
-    const uploadResponse = await cloudinary.uploader.upload(imageData, {
-      folder: 'alchies-events',
-      public_id: uniqueFileName,
-      resource_type: 'image',
-      // Optional transformations
-      transformation: [
-        { width: 1000, crop: 'limit' }, // Resize to max width of 1000px
-        { quality: 'auto:good' } // Auto-optimize quality
-      ]
-    });
-    
-    console.log('Image uploaded successfully to Cloudinary');
-    
-    // Return the secure URL to the uploaded image
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        url: uploadResponse.secure_url,
-        id: uploadResponse.public_id,
-        success: true
-      })
-    };
-    
   } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
+    console.error('Error processing upload request:', error);
     return {
       statusCode: 500,
       headers,

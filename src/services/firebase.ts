@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 // Firebase configuration using environment variables with fallbacks to ensure it works in any environment
 const firebaseConfig = {
@@ -18,7 +19,10 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore
 const db = getFirestore(app);
 
+// Initialize Storage
+const storage = getStorage(app);
+
 // Debug output to help troubleshoot initialization issues
 console.log("Firebase initialized with projectId:", firebaseConfig.projectId);
 
-export { db }; 
+export { db, storage }; 
