@@ -1,8 +1,4 @@
-import netlifyIdentity from 'netlify-identity-widget';
 import { User } from '../features/events/eventsSlice';
-
-// Initialize Netlify Identity
-netlifyIdentity.init();
 
 export interface AuthUser {
   id: string;
@@ -11,55 +7,35 @@ export interface AuthUser {
   avatar?: string;
 }
 
-// Auth service
+// Simplified auth service that doesn't use netlify-identity-widget
 const authService = {
   // Initialize auth on app start
   init: () => {
-    netlifyIdentity.on('init', (user) => {
-      if (user) {
-        // User is already logged in
-        console.log('User is already logged in');
-      }
-    });
-
-    // Handle login event
-    netlifyIdentity.on('login', (user) => {
-      netlifyIdentity.close();
-      console.log('Login successful');
-    });
-
-    // Handle logout event
-    netlifyIdentity.on('logout', () => {
-      console.log('Logout successful');
-    });
+    console.log('Auth service initialized - using dummy implementation');
   },
 
-  // Open the login modal
+  // Login (dummy implementation)
   login: () => {
-    netlifyIdentity.open();
+    console.log('Login function called (dummy implementation)');
   },
 
-  // Open the signup modal
+  // Signup (dummy implementation)
   signup: () => {
-    netlifyIdentity.open();
+    console.log('Signup function called (dummy implementation)');
   },
 
-  // Logout the current user
+  // Logout (dummy implementation)
   logout: () => {
-    netlifyIdentity.logout();
+    console.log('Logout function called (dummy implementation)');
   },
 
-  // Get the current user
+  // Get the current user - returns a dummy user
   getCurrentUser: (): AuthUser | null => {
-    const user = netlifyIdentity.currentUser();
-    
-    if (!user) return null;
-    
     return {
-      id: user.id,
-      name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-      email: user.email || '',
-      avatar: user.user_metadata?.avatar_url
+      id: '1',
+      name: 'Demo User',
+      email: 'demo@example.com',
+      avatar: undefined
     };
   },
 
@@ -76,23 +52,14 @@ const authService = {
     };
   },
 
-  // Check if user is authenticated
+  // Check if user is authenticated - always returns true in this dummy implementation
   isAuthenticated: (): boolean => {
-    return netlifyIdentity.currentUser() !== null;
+    return true;
   },
 
-  // Get JWT token for API calls
+  // Get JWT token for API calls - returns a dummy token
   getToken: async (): Promise<string | null> => {
-    const user = netlifyIdentity.currentUser();
-    if (!user) return null;
-    
-    try {
-      // Use refresh to get the current JWT token
-      return await netlifyIdentity.refresh();
-    } catch (error) {
-      console.error('Failed to get token:', error);
-      return null;
-    }
+    return 'dummy-jwt-token';
   }
 };
 
