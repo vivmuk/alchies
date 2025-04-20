@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
-import { fetchEvents, updateRSVP, archiveEvent, unarchiveEvent, deleteEvent, defaultUsers } from '../features/events/eventsSlice';
+import { fetchEvents, updateRSVP, archiveEvent, unarchiveEvent, deleteEvent, defaultUsers, RSVP, Event } from '../features/events/eventsSlice';
 import { format } from 'date-fns';
 import BottomNavigation from '../components/BottomNavigation';
 import ImageWithFallback from '../components/ImageWithFallback';
@@ -10,14 +10,12 @@ const EventDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { events, status } = useAppSelector((state) => state.events);
-  const event = events.find(e => e.id === id);
+  const { events, status } = useAppSelector((state: any) => state.events);
+  const event = events.find((e: Event) => e.id === id);
   
   const [copySuccess, setCopySuccess] = useState<string>('');
-  const [showRsvpModal, setShowRsvpModal] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [rsvpStatus, setRsvpStatus] = useState<'attending' | 'not-attending'>('attending');
-  const [rsvpComment, setRsvpComment] = useState('');
+  const [rsvpComments, setRsvpComments] = useState<Record<string, string>>({});
+  const [editingComment, setEditingComment] = useState<string | null>(null);
   
   useEffect(() => {
     if (status === 'idle') {
@@ -44,37 +42,58 @@ const EventDetailsPage: React.FC = () => {
       });
   };
   
-  // Open RSVP modal
-  const openRsvpModal = (userId: string) => {
-    setSelectedUserId(userId);
-    const userRsvp = event?.rsvps.find(r => r.userId === userId);
-    if (userRsvp) {
-      setRsvpStatus(userRsvp.status === 'undecided' ? 'attending' : userRsvp.status);
-      setRsvpComment(userRsvp.comment || '');
-    } else {
-      setRsvpStatus('attending');
-      setRsvpComment('');
-    }
-    setShowRsvpModal(true);
-  };
-  
-  // Handle RSVP submission
-  const handleRsvpSubmit = () => {
-    if (!event || !selectedUserId) return;
+  // Handle direct RSVP toggle
+  const handleRsvpToggle = (userId: string, currentStatus: string) => {
+    if (!event) return;
     
-    const userName = defaultUsers.find(u => u.id === selectedUserId)?.name || 'Guest';
+    const userName = defaultUsers.find(u => u.id === userId)?.name || 'Guest';
+    const rsvp = event.rsvps.find((r: RSVP) => r.userId === userId);
+    
+    // Toggle between attending and not-attending
+    let newStatus: 'attending' | 'not-attending' | 'undecided' = 'attending';
+    if (currentStatus === 'attending') {
+      newStatus = 'not-attending';
+    } else if (currentStatus === 'not-attending') {
+      newStatus = 'attending';
+    } else {
+      newStatus = 'attending';
+    }
+    
+    // Get existing comment if there is one
+    const comment = rsvp?.comment || '';
     
     dispatch(updateRSVP({
       eventId: event.id,
       rsvp: {
-        userId: selectedUserId,
+        userId: userId,
         name: userName,
-        status: rsvpStatus,
-        comment: rsvpComment.trim() || undefined
+        status: newStatus,
+        comment: comment
+      }
+    }));
+  };
+  
+  // Handle comment update
+  const handleUpdateComment = (userId: string) => {
+    if (!event) return;
+    
+    const rsvp = event.rsvps.find((r: RSVP) => r.userId === userId);
+    if (!rsvp) return;
+    
+    const userName = defaultUsers.find(u => u.id === userId)?.name || 'Guest';
+    const comment = rsvpComments[userId] || '';
+    
+    dispatch(updateRSVP({
+      eventId: event.id,
+      rsvp: {
+        userId: userId,
+        name: userName,
+        status: rsvp.status,
+        comment: comment
       }
     }));
     
-    setShowRsvpModal(false);
+    setEditingComment(null);
   };
   
   // Handle archive/unarchive event
@@ -224,26 +243,28 @@ const EventDetailsPage: React.FC = () => {
           </div>
         </div>
         
-        {/* RSVP Status */}
+        {/* RSVP Status - Modified for direct RSVP toggling */}
         <div className="bg-white dark:bg-dark-card rounded-xl p-6 shadow-md mb-6">
           <h3 className="text-lg font-semibold mb-4">RSVPs</h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {event.rsvps.map((rsvp) => {
+            {event.rsvps.map((rsvp: RSVP) => {
               const user = defaultUsers.find(u => u.id === rsvp.userId);
               let statusColor = 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
+              let statusLabel = 'Undecided';
               
               if (rsvp.status === 'attending') {
                 statusColor = 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400';
+                statusLabel = 'Going';
               } else if (rsvp.status === 'not-attending') {
                 statusColor = 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400';
+                statusLabel = 'Not Going';
               }
               
               return (
                 <div 
                   key={rsvp.userId}
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col hover:shadow-md transition duration-200 cursor-pointer"
-                  onClick={() => openRsvpModal(rsvp.userId)}
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col hover:shadow-md transition duration-200"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
@@ -260,15 +281,63 @@ const EventDetailsPage: React.FC = () => {
                       )}
                       <span className="font-medium">{user?.name || rsvp.name}</span>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${statusColor}`}>
-                      {rsvp.status === 'attending' ? 'Going' : 
-                       rsvp.status === 'not-attending' ? 'Not Going' : 'Undecided'}
-                    </span>
+                    <button 
+                      onClick={() => handleRsvpToggle(rsvp.userId, rsvp.status)}
+                      className={`text-xs px-2 py-1 rounded-full ${statusColor} transition-colors duration-200 hover:opacity-80`}
+                    >
+                      {statusLabel}
+                    </button>
                   </div>
-                  {rsvp.comment && (
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic">
-                      "{rsvp.comment}"
-                    </p>
+                  
+                  {editingComment === rsvp.userId ? (
+                    <div className="mt-2">
+                      <textarea
+                        value={rsvpComments[rsvp.userId] || rsvp.comment || ''}
+                        onChange={(e) => setRsvpComments({...rsvpComments, [rsvp.userId]: e.target.value})}
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm"
+                        placeholder="Add a comment..."
+                        rows={2}
+                      />
+                      <div className="flex justify-end mt-1 space-x-2">
+                        <button 
+                          onClick={() => setEditingComment(null)}
+                          className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={() => handleUpdateComment(rsvp.userId)}
+                          className="text-xs text-primary hover:text-indigo-700"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    rsvp.comment ? (
+                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic flex justify-between items-start">
+                        <p>"{rsvp.comment}"</p>
+                        <button
+                          onClick={() => {
+                            setRsvpComments({...rsvpComments, [rsvp.userId]: rsvp.comment || ''});
+                            setEditingComment(rsvp.userId);
+                          }}
+                          className="text-xs text-primary hover:text-indigo-700 ml-2"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setRsvpComments({...rsvpComments, [rsvp.userId]: ''});
+                          setEditingComment(rsvp.userId);
+                        }}
+                        className="mt-2 text-xs text-primary hover:text-indigo-700 text-left"
+                      >
+                        + Add comment
+                      </button>
+                    )
                   )}
                 </div>
               );
@@ -279,7 +348,13 @@ const EventDetailsPage: React.FC = () => {
         {/* Event Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={() => navigate(`/edit-event/${event.id}`)}
+            onClick={() => {
+              try {
+                navigate(`/edit-event/${event.id}`);
+              } catch (error) {
+                console.error("Navigation error:", error);
+              }
+            }}
             className="flex-1 py-3 bg-primary hover:bg-indigo-600 text-white font-semibold rounded-xl transition"
           >
             Edit Event
@@ -304,74 +379,6 @@ const EventDetailsPage: React.FC = () => {
           </button>
         </div>
       </main>
-      
-      {/* RSVP Modal */}
-      {showRsvpModal && (
-        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold mb-4">Update RSVP</h3>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">
-                Status
-              </label>
-              <div className="flex space-x-4">
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="attending"
-                    name="rsvp-status"
-                    checked={rsvpStatus === 'attending'}
-                    onChange={() => setRsvpStatus('attending')}
-                    className="mr-2 h-4 w-4 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="attending" className="text-sm">Going</label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="not-attending"
-                    name="rsvp-status"
-                    checked={rsvpStatus === 'not-attending'}
-                    onChange={() => setRsvpStatus('not-attending')}
-                    className="mr-2 h-4 w-4 text-red-500 focus:ring-red-500"
-                  />
-                  <label htmlFor="not-attending" className="text-sm">Not Going</label>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="comment" className="block text-sm font-medium mb-2">
-                Comment (optional)
-              </label>
-              <textarea
-                id="comment"
-                value={rsvpComment}
-                onChange={(e) => setRsvpComment(e.target.value)}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-dark-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/40 focus:border-primary/40 outline-none"
-                placeholder="Add a comment..."
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowRsvpModal(false)}
-                className="flex-1 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-xl transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRsvpSubmit}
-                className="flex-1 py-2 bg-primary hover:bg-indigo-600 text-white font-medium rounded-xl transition"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       
       <BottomNavigation />
     </div>
