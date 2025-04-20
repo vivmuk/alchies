@@ -26,16 +26,45 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   const [loaded, setLoaded] = useState(false);
   const [currentSrc, setCurrentSrc] = useState<string | undefined>(src);
   
-  // Reset error state when src changes
-  useEffect(() => {
-    setError(false);
-    setLoaded(false);
-    setCurrentSrc(src);
-  }, [src]);
-  
   // Choose a random fallback image if none is provided
   const defaultFallback = fallbackSrc || 
     fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+  
+  // Reset error state and preload image when src changes
+  useEffect(() => {
+    if (!src) {
+      setError(true);
+      setCurrentSrc(defaultFallback);
+      return;
+    }
+    
+    setError(false);
+    setLoaded(false);
+    setCurrentSrc(src);
+    
+    // Preload the image
+    const img = new Image();
+    img.src = src;
+    
+    img.onload = () => {
+      setLoaded(true);
+    };
+    
+    img.onerror = () => {
+      console.log(`Image preload error for: ${src}`);
+      setError(true);
+      setCurrentSrc(defaultFallback);
+      
+      // Preload fallback image
+      const fallbackImg = new Image();
+      fallbackImg.src = defaultFallback;
+    };
+    
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [src, defaultFallback]);
   
   // Handle image load errors
   const handleError = () => {
@@ -55,21 +84,20 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   const showLoadingState = !loaded && !error;
   
   return (
-    <>
+    <div className={`relative ${className}`}>
       {showLoadingState && (
-        <div className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${className}`}>
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
           <div className="animate-pulse w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700"></div>
         </div>
       )}
       <img
         src={error ? defaultFallback : currentSrc}
         alt={alt}
-        className={`${className} ${showLoadingState ? 'hidden' : ''}`}
+        className={`w-full h-full object-cover ${showLoadingState ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
         onError={handleError}
         onLoad={handleLoad}
-        loading="lazy"
       />
-    </>
+    </div>
   );
 };
 
