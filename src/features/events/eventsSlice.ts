@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import updateEvent from './updateEvent';
 
 // Types
 export interface User {
@@ -162,6 +163,20 @@ export const deleteEvent = createAsyncThunk(
   }
 );
 
+// Comment out the updateEvent section:
+// export const updateEvent = createAsyncThunk(
+//   'events/updateEvent',
+//   async ({ id, updates }: { id: string, updates: Partial<Event> }) => {
+//     try {
+//       const updatedEvent = await api.events.update(id, updates);
+//       return updatedEvent;
+//     } catch (error) {
+//       console.error('Failed to update event:', error);
+//       throw error;
+//     }
+//   }
+// );
+
 const eventsSlice = createSlice({
   name: 'events',
   initialState,
@@ -232,6 +247,12 @@ const eventsSlice = createSlice({
       })
       .addCase(deleteEvent.fulfilled, (state, action) => {
         state.events = state.events.filter(event => event.id !== action.payload);
+      })
+      .addCase(updateEvent.fulfilled, (state, action) => {
+        const index = state.events.findIndex(event => event.id === action.payload.id);
+        if (index !== -1) {
+          state.events[index] = action.payload;
+        }
       });
   }
 });

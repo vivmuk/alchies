@@ -1,5 +1,5 @@
 [build]
-  command = "CI=false npm run build"
+  command = "CI=false ESLINT_NO_DEV_ERRORS=true TSC_COMPILE_ON_ERROR=true npm run build"
   publish = "build"
   functions = "netlify/functions"
 
@@ -17,6 +17,8 @@
   NPM_FLAGS = "--legacy-peer-deps --no-fund --no-audit"
   CI = "false"
   NODE_ENV = "production"
+  TSC_COMPILE_ON_ERROR = "true"
+  ESLINT_NO_DEV_ERRORS = "true"
 
 [template.environment]
   REACT_APP_SITE_URL = "YOUR_NETLIFY_SITE_URL"

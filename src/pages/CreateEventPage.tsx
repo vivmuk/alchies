@@ -1,7 +1,9 @@
 import React, { useState, FormEvent, useRef, ChangeEvent, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { addEvent, updateEvent, fetchEvents, Event, User, defaultUsers, RSVP } from '../features/events/eventsSlice';
+import { addEvent, fetchEvents, Event, User, defaultUsers, RSVP } from '../features/events/eventsSlice';
+import updateEvent from '../features/events/updateEvent';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
+import { RootState } from '../app/store';
 import BottomNavigation from '../components/BottomNavigation';
 import api from '../services/api';
 import ImageWithFallback from '../components/ImageWithFallback';
@@ -14,11 +16,11 @@ const CreateEventPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { events } = useAppSelector((state) => state.events);
+  const { events } = useAppSelector((state: RootState) => state.events);
   
   // Determine if we're editing an existing event
   const isEditMode = !!id;
-  const existingEvent = isEditMode ? events.find(event => event.id === id) : null;
+  const existingEvent = isEditMode ? events.find((event) => event.id === id) : null;
   
   // Form state
   const [title, setTitle] = useState('');
