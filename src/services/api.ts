@@ -20,10 +20,14 @@ const api = {
         // return (await axios.get(`${API_URL}/events`)).data;
         
         await delay(500); // Simulate network delay
+        // Ensure events is an extensible array
+        if (!Array.isArray(mockDb.events) || Object.isExtensible(mockDb.events) === false) {
+          mockDb.events = [...mockDb.events];
+        }
         return mockDb.events;
       } catch (error) {
         console.error('Error fetching events:', error);
-        return mockDb.events;
+        return [];
       }
     },
     
@@ -59,6 +63,11 @@ const api = {
           updatedAt: new Date().toISOString(),
           isArchived: false
         };
+        
+        // Ensure events is an extensible array before pushing
+        if (!Array.isArray(mockDb.events) || Object.isExtensible(mockDb.events) === false) {
+          mockDb.events = [...(mockDb.events || [])];
+        }
         
         mockDb.events.push(newEvent);
         return newEvent;
