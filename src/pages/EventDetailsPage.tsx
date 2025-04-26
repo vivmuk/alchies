@@ -68,8 +68,21 @@ const EventDetailsPage: React.FC = () => {
   const handleRsvpToggle = (userId: string, currentStatus: string) => {
     if (!event) return;
     
-    const userName = defaultUsers.find(u => u.id === userId)?.name || 'Guest';
+    console.log(`Toggling RSVP for user ${userId} with current status: ${currentStatus}`);
+    
+    // Find user info from defaultUsers array
+    const user = defaultUsers.find(u => u.id === userId);
+    if (!user) {
+      console.error(`User with ID ${userId} not found in defaultUsers`);
+      return;
+    }
+    
+    const userName = user.name;
+    console.log(`Found user: ${userName} with ID: ${userId}`);
+    
+    // Find current RSVP if it exists
     const rsvp = event.rsvps.find((r: RSVP) => r.userId === userId);
+    console.log('Current RSVP:', rsvp);
     
     // Toggle between attending and not-attending
     let newStatus: 'attending' | 'not-attending' | 'undecided' = 'attending';
@@ -81,42 +94,85 @@ const EventDetailsPage: React.FC = () => {
       newStatus = 'attending';
     }
     
-    // Get existing comment if there is one
-    const comment = rsvp?.comment || '';
-    const rating = rsvp?.rating;
+    console.log(`Setting new status to: ${newStatus}`);
     
+    // Get existing comment and rating if there is one
+    const comment = rsvp?.comment || '';
+    const rating = rsvp?.rating || null;
+    
+    // Create updated RSVP object
+    const updatedRsvp: RSVP = {
+      userId,
+      name: userName,
+      status: newStatus,
+      comment,
+      rating
+    };
+    
+    console.log('Dispatching updateRSVP with:', updatedRsvp);
+    
+    // Update the RSVP
     dispatch(updateRSVP({
       eventId: event.id,
-      rsvp: {
-        userId: userId,
-        name: userName,
-        status: newStatus,
-        comment: comment,
-        rating: rating
+      rsvp: updatedRsvp
+    })).then(result => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        console.log('RSVP updated successfully');
+      } else if (result.meta.requestStatus === 'rejected') {
+        console.error('Failed to update RSVP');
       }
-    }));
+    }).catch(error => {
+      console.error('Error updating RSVP:', error);
+    });
   };
   
   // Handle comment update
   const handleUpdateComment = (userId: string) => {
     if (!event) return;
     
-    const rsvp = event.rsvps.find((r: RSVP) => r.userId === userId);
-    if (!rsvp) return;
+    console.log(`Updating comment for user ${userId}`);
     
-    const userName = defaultUsers.find(u => u.id === userId)?.name || 'Guest';
+    // Find current RSVP
+    const rsvp = event.rsvps.find((r: RSVP) => r.userId === userId);
+    if (!rsvp) {
+      console.error(`RSVP not found for user ${userId}`);
+      return;
+    }
+    
+    // Find user info
+    const user = defaultUsers.find(u => u.id === userId);
+    if (!user) {
+      console.error(`User with ID ${userId} not found in defaultUsers`);
+      return;
+    }
+    
+    const userName = user.name;
     const comment = rsvpComments[userId] || '';
     
+    console.log(`Updating comment for ${userName} to: "${comment}"`);
+    
+    // Create updated RSVP object
+    const updatedRsvp: RSVP = {
+      userId,
+      name: userName,
+      status: rsvp.status,
+      comment,
+      rating: rsvp.rating
+    };
+    
+    // Update the RSVP
     dispatch(updateRSVP({
       eventId: event.id,
-      rsvp: {
-        userId: userId,
-        name: userName,
-        status: rsvp.status,
-        comment: comment,
-        rating: rsvp.rating
+      rsvp: updatedRsvp
+    })).then(result => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        console.log('Comment updated successfully');
+      } else if (result.meta.requestStatus === 'rejected') {
+        console.error('Failed to update comment');
       }
-    }));
+    }).catch(error => {
+      console.error('Error updating comment:', error);
+    });
     
     setEditingComment(null);
   };

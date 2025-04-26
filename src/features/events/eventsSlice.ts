@@ -118,23 +118,51 @@ export const updateRSVP = createAsyncThunk(
   'events/updateRSVP',
   async ({ eventId, rsvp }: { eventId: string, rsvp: RSVP }) => {
     try {
+      console.log(`Updating RSVP for user ${rsvp.userId} (${rsvp.name}) to status: ${rsvp.status}`);
+      
       const event = await api.events.getById(eventId);
       
-      // Update the RSVP list
-      const existingRSVPIndex = event.rsvps.findIndex(r => r.userId === rsvp.userId);
-      
-      if (existingRSVPIndex >= 0) {
-        event.rsvps[existingRSVPIndex] = rsvp;
-      } else {
-        event.rsvps.push(rsvp);
+      if (!event) {
+        throw new Error(`Event with ID ${eventId} not found`);
       }
       
-      // Update the event on the server
-      await api.events.update(eventId, { rsvps: event.rsvps });
+      console.log('Current RSVPs before update:', event.rsvps.length);
       
-      return { eventId, rsvp };
+      // Find the RSVP by userId
+      const existingRSVPIndex = event.rsvps.findIndex(r => r.userId === rsvp.userId);
+      console.log('Existing RSVP index:', existingRSVPIndex, 'for user:', rsvp.userId);
+      
+      // Create a new array of RSVPs to avoid mutation issues
+      const updatedRsvps = [...event.rsvps];
+      
+      if (existingRSVPIndex >= 0) {
+        // Update the existing RSVP
+        updatedRsvps[existingRSVPIndex] = {
+          ...updatedRsvps[existingRSVPIndex],
+          ...rsvp
+        };
+        console.log('Updated existing RSVP for:', rsvp.name);
+      } else {
+        // Add a new RSVP
+        updatedRsvps.push(rsvp);
+        console.log('Added new RSVP for:', rsvp.name);
+      }
+      
+      // Update the event on the server with the new RSVPs array
+      await api.events.update(eventId, { rsvps: updatedRsvps });
+      console.log('Event updated successfully with new RSVP');
+      
+      return { 
+        eventId, 
+        rsvp,
+        allRsvps: updatedRsvps
+      };
     } catch (error) {
       console.error('Failed to update RSVP:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       throw error;
     }
   }
@@ -263,16 +291,22 @@ const eventsSlice = createSlice({
         state.status = 'idle';
       })
       .addCase(updateRSVP.fulfilled, (state, action) => {
-        const { eventId, rsvp } = action.payload;
+        const { eventId, rsvp, allRsvps } = action.payload;
         const event = state.events.find(event => event.id === eventId);
         
         if (event) {
-          const existingRSVPIndex = event.rsvps.findIndex(r => r.userId === rsvp.userId);
-          
-          if (existingRSVPIndex >= 0) {
-            event.rsvps[existingRSVPIndex] = rsvp;
+          // If we have the full updated RSVP list, use it
+          if (allRsvps) {
+            event.rsvps = allRsvps;
           } else {
-            event.rsvps.push(rsvp);
+            // Fallback to old behavior
+            const existingRSVPIndex = event.rsvps.findIndex(r => r.userId === rsvp.userId);
+            
+            if (existingRSVPIndex >= 0) {
+              event.rsvps[existingRSVPIndex] = rsvp;
+            } else {
+              event.rsvps.push(rsvp);
+            }
           }
           
           event.updatedAt = new Date().toISOString();
