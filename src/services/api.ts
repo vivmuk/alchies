@@ -58,8 +58,12 @@ const api = {
           isArchived: false
         };
         
+        console.log('Creating new event with data:', newEvent);
+        
         // Add the document to Firestore
         const docRef = await addDoc(eventsCollection, newEvent);
+        
+        console.log('Event created successfully with ID:', docRef.id);
         
         // Return the event with the generated ID
         return {
@@ -68,6 +72,11 @@ const api = {
         } as Event;
       } catch (error) {
         console.error('Error creating event:', error);
+        // Log additional debug info
+        if (error instanceof Error) {
+          console.error('Error details:', error.message);
+          console.error('Error stack:', error.stack);
+        }
         throw error;
       }
     },

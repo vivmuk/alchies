@@ -239,6 +239,7 @@ const eventsSlice = createSlice({
       })
       .addCase(addEvent.fulfilled, (state, action) => {
         state.events.push(action.payload);
+        state.status = 'idle';
       })
       .addCase(updateRSVP.fulfilled, (state, action) => {
         const { eventId, rsvp } = action.payload;

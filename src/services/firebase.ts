@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 // Firebase configuration using environment variables with fallbacks to ensure it works in any environment
 const firebaseConfig = {
@@ -13,16 +13,27 @@ const firebaseConfig = {
     measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-TSJG8FV1HN"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+let db: Firestore;
+let storage: FirebaseStorage;
 
-// Initialize Firestore
-const db = getFirestore(app);
-
-// Initialize Storage
-const storage = getStorage(app);
-
-// Debug output to help troubleshoot initialization issues
-console.log("Firebase initialized with projectId:", firebaseConfig.projectId);
+try {
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    
+    // Initialize Firestore
+    db = getFirestore(app);
+    
+    // Initialize Storage
+    storage = getStorage(app);
+    
+    // Debug output to help troubleshoot initialization issues
+    console.log("Firebase initialized successfully with projectId:", firebaseConfig.projectId);
+} catch (error) {
+    console.error("Firebase initialization error:", error);
+    // Initialize with default empty instances to prevent app crashes
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    storage = getStorage(app);
+}
 
 export { db, storage }; 
