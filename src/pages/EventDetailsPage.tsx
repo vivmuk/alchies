@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
-import { fetchEvents, updateRSVP, archiveEvent, unarchiveEvent, deleteEvent, defaultUsers, RSVP, Event } from '../features/events/eventsSlice';
+import { fetchEvents, updateRSVP, updateRating, archiveEvent, unarchiveEvent, deleteEvent, defaultUsers, RSVP, Event } from '../features/events/eventsSlice';
 import { format, parseISO } from 'date-fns';
 import BottomNavigation from '../components/BottomNavigation';
 import ImageWithFallback from '../components/ImageWithFallback';
@@ -17,12 +17,20 @@ const EventDetailsPage: React.FC = () => {
   const [copySuccess, setCopySuccess] = useState<string>('');
   const [rsvpComments, setRsvpComments] = useState<Record<string, string>>({});
   const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [editingRating, setEditingRating] = useState<string | null>(null);
   
   // Date and time editing states
   const [isEditingDateTime, setIsEditingDateTime] = useState(false);
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
   const [editDateSuccess, setEditDateSuccess] = useState<string>('');
+  
+  // Calculate average rating
+  const ratings = event?.rsvps.filter((rsvp: RSVP) => rsvp.rating !== null && rsvp.rating !== undefined)
+    .map((rsvp: RSVP) => rsvp.rating as number) || [];
+  const averageRating = ratings.length > 0
+    ? (ratings.reduce((sum: number, rating: number) => sum + rating, 0) / ratings.length).toFixed(1)
+    : 'Not yet rated';
   
   useEffect(() => {
     if (status === 'idle') {
@@ -75,6 +83,7 @@ const EventDetailsPage: React.FC = () => {
     
     // Get existing comment if there is one
     const comment = rsvp?.comment || '';
+    const rating = rsvp?.rating;
     
     dispatch(updateRSVP({
       eventId: event.id,
@@ -82,7 +91,8 @@ const EventDetailsPage: React.FC = () => {
         userId: userId,
         name: userName,
         status: newStatus,
-        comment: comment
+        comment: comment,
+        rating: rating
       }
     }));
   };
@@ -103,11 +113,25 @@ const EventDetailsPage: React.FC = () => {
         userId: userId,
         name: userName,
         status: rsvp.status,
-        comment: comment
+        comment: comment,
+        rating: rsvp.rating
       }
     }));
     
     setEditingComment(null);
+  };
+  
+  // Handle rating update
+  const handleUpdateRating = (userId: string, rating: number | null) => {
+    if (!event) return;
+    
+    dispatch(updateRating({
+      eventId: event.id,
+      userId: userId,
+      rating: rating
+    }));
+    
+    setEditingRating(null);
   };
   
   // Toggle date and time edit mode
@@ -338,7 +362,16 @@ const EventDetailsPage: React.FC = () => {
         
         {/* RSVP Status - Modified for direct RSVP toggling */}
         <div className="bg-white dark:bg-dark-card rounded-xl p-6 shadow-md mb-6">
-          <h3 className="text-lg font-semibold mb-4">RSVPs</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">RSVPs</h3>
+            <div className="flex items-center bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 px-3 py-1 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span className="text-sm font-medium">Average Rating: {averageRating}</span>
+              <span className="text-xs ml-1">({ratings.length} ratings)</span>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {event.rsvps.map((rsvp: RSVP) => {
@@ -382,8 +415,54 @@ const EventDetailsPage: React.FC = () => {
                     </button>
                   </div>
                   
+                  {/* Rating Section */}
+                  <div className="mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">
+                    {editingRating === rsvp.userId ? (
+                      <div className="flex flex-col">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Rate venue (0-10):</div>
+                        <div className="flex items-center">
+                          <input
+                            type="range"
+                            min="0"
+                            max="10"
+                            value={rsvp.rating || 0}
+                            onChange={(e) => handleUpdateRating(rsvp.userId, parseInt(e.target.value))}
+                            className="flex-grow mr-2"
+                          />
+                          <span className="text-sm font-semibold text-yellow-500">{rsvp.rating || 0}</span>
+                        </div>
+                        <div className="flex justify-end mt-1">
+                          <button
+                            onClick={() => setEditingRating(null)}
+                            className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                          >
+                            Done
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span className="text-sm">
+                            {rsvp.rating !== null && rsvp.rating !== undefined ? `${rsvp.rating}/10` : 'Not rated'}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setEditingRating(rsvp.userId)}
+                          className="text-xs text-primary hover:text-indigo-700"
+                        >
+                          {rsvp.rating !== null && rsvp.rating !== undefined ? 'Change' : 'Rate'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Comment Section */}
                   {editingComment === rsvp.userId ? (
-                    <div className="mt-2">
+                    <div className="mt-2 border-t border-gray-100 dark:border-gray-700 pt-2">
                       <textarea
                         value={rsvpComments[rsvp.userId] || rsvp.comment || ''}
                         onChange={(e) => setRsvpComments({...rsvpComments, [rsvp.userId]: e.target.value})}
@@ -408,7 +487,7 @@ const EventDetailsPage: React.FC = () => {
                     </div>
                   ) : (
                     rsvp.comment ? (
-                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic flex justify-between items-start">
+                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic flex justify-between items-start border-t border-gray-100 dark:border-gray-700 pt-2">
                         <p>"{rsvp.comment}"</p>
                         <button
                           onClick={() => {
@@ -426,7 +505,7 @@ const EventDetailsPage: React.FC = () => {
                           setRsvpComments({...rsvpComments, [rsvp.userId]: ''});
                           setEditingComment(rsvp.userId);
                         }}
-                        className="mt-2 text-xs text-primary hover:text-indigo-700 text-left"
+                        className="mt-2 text-xs text-primary hover:text-indigo-700 text-left border-t border-gray-100 dark:border-gray-700 pt-2"
                       >
                         + Add comment
                       </button>

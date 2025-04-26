@@ -20,6 +20,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/create" element={<CreateEventPage />} />
             <Route path="/event/:id" element={<EventDetailsPage />} />
+            <Route path="/edit-event/:id" element={<CreateEventPage />} />
             <Route path="/memories" element={<MemoriesPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Routes>

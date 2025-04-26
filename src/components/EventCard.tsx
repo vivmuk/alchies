@@ -15,6 +15,12 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   const notAttending = rsvps.filter(rsvp => rsvp.status === 'not-attending').length;
   const undecided = rsvps.filter(rsvp => rsvp.status === 'undecided').length;
   
+  // Calculate average rating
+  const ratings = rsvps.filter(rsvp => rsvp.rating !== null && rsvp.rating !== undefined).map(rsvp => rsvp.rating as number);
+  const averageRating = ratings.length > 0 
+    ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1) 
+    : null;
+  
   // Format date - fixed to handle timezone issues
   const eventDate = parseISO(date);
   const formattedDate = format(eventDate, 'EEE, MMM d, yyyy');
@@ -105,6 +111,16 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>{undecided} pending</span>
+              </div>
+            )}
+            
+            {averageRating !== null && (
+              <div className="flex items-center text-yellow-500 dark:text-yellow-400 ml-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <span>{averageRating}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">({ratings.length})</span>
               </div>
             )}
           </div>
