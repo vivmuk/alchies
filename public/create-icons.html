@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Icon Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #6366f1;
+        }
+        .steps {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #4f46e5;
+        }
+        .preview {
+            margin-top: 20px;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        #preview-container img {
+            max-width: 100px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>App Icon Generator for Chino Alchies</h1>
+    
+    <div class="steps">
+        <h2>Steps to create app icons:</h2>
+        <ol>
+            <li>Upload the Aubrey headshot image using the button below</li>
+            <li>This page will help you crop and generate the icon sizes needed</li>
+            <li>Download the generated icons and place them in the public folder</li>
+        </ol>
+        
+        <p><strong>Note:</strong> This is a local helper page only. For production, use one of these online services:</p>
+        <ul>
+            <li><a href="https://favicon.io/favicon-converter/" target="_blank">favicon.io</a> - Simple favicon generator</li>
+            <li><a href="https://realfavicongenerator.net/" target="_blank">realfavicongenerator.net</a> - Full-featured icon generator</li>
+        </ul>
+    </div>
+    
+    <div>
+        <input type="file" id="image-input" accept="image/*" />
+        <button class="button" id="generate-button" disabled>Generate Icons</button>
+    </div>
+    
+    <div class="preview" id="preview-container">
+        <h3>Icon Previews</h3>
+        <p>Upload an image to see previews here</p>
+        <!-- Preview images will be inserted here -->
+    </div>
+    
+    <script>
+        // This is a placeholder script - in production, use the online tools
+        // mentioned above instead of this basic implementation
+        
+        const imageInput = document.getElementById('image-input');
+        const generateButton = document.getElementById('generate-button');
+        const previewContainer = document.getElementById('preview-container');
+        
+        imageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                generateButton.disabled = false;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `
+                        <h3>Icon Previews</h3>
+                        <p>Here's how your icons would look (simplified preview):</p>
+                        <div>
+                            <p>192x192:</p>
+                            <img src="${e.target.result}" alt="192x192 preview" style="width:192px;height:192px;object-fit:cover;" />
+                        </div>
+                        <div style="margin-top:20px;">
+                            <p>512x512:</p>
+                            <img src="${e.target.result}" alt="512x512 preview" style="width:100px;height:100px;object-fit:cover;" />
+                        </div>
+                        <p style="margin-top:20px;">For actual icon generation, please use one of the online tools mentioned above.</p>
+                    `;
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        generateButton.addEventListener('click', function() {
+            alert("This is a helper page only. Please use favicon.io or realfavicongenerator.net to create your actual icon files.");
+        });
+    </script>
+</body>
+</html> 

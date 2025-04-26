@@ -144,3 +144,70 @@ For production, you should:
 1. Set up proper Firestore security rules
 2. Consider adding authentication
 3. Move Firebase API keys to environment variables
+
+## App Icon Setup
+
+To properly set up the app icons for PWA functionality and browser tabs:
+
+1. Create the following image files from the Aubrey headshot:
+   - `aubrey-icon-192.png` (192×192 pixels)
+   - `aubrey-icon-512.png` (512×512 pixels)
+   - `favicon.ico` (multi-resolution icon: 16x16, 32x32, 48x48, 64x64)
+
+2. Place these files in the `public` folder
+
+3. Verify the following files have the correct references:
+   - `public/manifest.json` - should reference these icon files
+   - `public/index.html` - should have proper meta tags for icons
+
+4. After adding the icon files, rebuild and redeploy the app.
+
+### Creating Icons from Headshot
+
+You can use an online tool to create all required icon formats:
+
+1. Go to [favicon.io](https://favicon.io/favicon-converter/) or [realfavicongenerator.net](https://realfavicongenerator.net/)
+2. Upload the Aubrey headshot image
+3. Download the generated icon pack
+4. Rename and place the files in your public folder:
+   - The 192×192 PNG as `aubrey-icon-192.png`
+   - The 512×512 PNG as `aubrey-icon-512.png`
+   - The ICO file as `favicon.ico`
+
+After adding these files, they will be included in your next Git commit.
+
+## Git Commands for Uploading
+
+```bash
+# Add the icon files
+git add public/aubrey-icon-192.png
+git add public/aubrey-icon-512.png
+git add public/favicon.ico
+
+# Add the modified config files 
+git add public/manifest.json
+git add public/index.html
+
+# Create a commit
+git commit -m "Add app icons for PWA and browser tabs"
+
+# Push to your repository
+git push
+```
+
+## Development
+
+```bash
+npm install
+npm start
+```
+
+## Production Build
+
+```bash
+npm run build
+```
+
+## Deployment
+
+The app is currently deployed to Netlify/Firebase with automatic deployment from the Git repository.
