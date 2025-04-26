@@ -177,28 +177,42 @@ export const updateRating = createAsyncThunk(
   'events/updateRating',
   async ({ eventId, userId, rating }: { eventId: string, userId: string, rating: number | null }) => {
     try {
+      console.log(`Updating rating for event ${eventId}, user ${userId}, rating: ${rating}`);
+      
       const event = await api.events.getById(eventId);
       
       // Find the RSVP
       const existingRSVPIndex = event.rsvps.findIndex(r => r.userId === userId);
+      console.log('Existing RSVP index:', existingRSVPIndex);
       
       if (existingRSVPIndex >= 0) {
         // Update the rating
         event.rsvps[existingRSVPIndex].rating = rating;
         
+        console.log('Updated RSVP:', event.rsvps[existingRSVPIndex]);
+        
         // Update the event on the server
-        await api.events.update(eventId, { rsvps: event.rsvps });
+        const updatedEvent = await api.events.update(eventId, { 
+          rsvps: event.rsvps 
+        });
+        
+        console.log('Event updated successfully with new rating');
         
         return { 
           eventId, 
           userId, 
-          rating 
+          rating,
+          rsvps: updatedEvent.rsvps 
         };
       } else {
         throw new Error('RSVP not found');
       }
     } catch (error) {
       console.error('Failed to update rating:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       throw error;
     }
   }

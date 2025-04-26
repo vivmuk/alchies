@@ -43,12 +43,16 @@ const HomePage: React.FC = () => {
     }
   }, [status, dispatch, events.length]);
   
+  // Force fetch events on component mount
   useEffect(() => {
-    // Force fetch on component mount regardless of status
     console.log('HomePage: Initial fetchEvents call');
     dispatch(fetchEvents());
   }, [dispatch]);
   
+  // Show ALL events, not just upcoming ones (for testing)
+  const allEvents = sortEventsByDate(events);
+  
+  // Filter for upcoming events only
   const upcomingEvents = sortEventsByDate(events.filter((event: Event) => {
     if (!event || event.isArchived) {
       return false;
@@ -58,6 +62,7 @@ const HomePage: React.FC = () => {
       // Parse date properly to avoid timezone issues
       const eventDate = parseISO(event.date);
       const today = new Date();
+      console.log(`Event date check: ${event.title}, date: ${event.date}, parsed: ${eventDate}, today: ${today}, is upcoming: ${eventDate >= today}`);
       return eventDate >= today;
     } catch (error) {
       console.error('Error parsing event date:', error, 'Event:', event);
@@ -65,10 +70,19 @@ const HomePage: React.FC = () => {
     }
   }));
   
-  // Log filtered events
+  // For debugging - log both sets of events
   useEffect(() => {
+    console.log('Total events count:', allEvents.length);
     console.log('Upcoming events count:', upcomingEvents.length);
-  }, [upcomingEvents.length]);
+    
+    // Log all event dates to debug filtering
+    events.forEach((event: Event) => {
+      console.log(`Event: ${event.title}, Date: ${event.date}, isArchived: ${event.isArchived}`);
+    });
+  }, [events.length, allEvents.length, upcomingEvents.length]);
+  
+  // TEMPORARY: Display all events for testing
+  const displayEvents = allEvents;
   
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -140,7 +154,7 @@ const HomePage: React.FC = () => {
           </div>
         )}
         
-        {status === 'succeeded' && upcomingEvents.length === 0 && (
+        {status === 'succeeded' && displayEvents.length === 0 && (
           <div className="bg-gray-100 dark:bg-dark-card p-8 rounded-xl text-center border border-gray-200 dark:border-gray-700">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -156,7 +170,7 @@ const HomePage: React.FC = () => {
         )}
         
         <div className="grid gap-4">
-          {upcomingEvents.map(event => (
+          {displayEvents.map(event => (
             <EventCard 
               key={event.id}
               event={event}

@@ -125,11 +125,32 @@ const EventDetailsPage: React.FC = () => {
   const handleUpdateRating = (userId: string, rating: number | null) => {
     if (!event) return;
     
+    console.log(`Updating rating for ${userId} to ${rating} for event ${event.id}`);
+    
+    // Find the current RSVP status
+    const currentRsvp = event.rsvps.find((r: RSVP) => r.userId === userId);
+    
+    if (currentRsvp) {
+      console.log('Current RSVP before update:', currentRsvp);
+    }
+    
     dispatch(updateRating({
       eventId: event.id,
       userId: userId,
       rating: rating
-    }));
+    })).then((result: any) => {
+      if (result.meta.requestStatus === 'fulfilled') {
+        console.log('Rating updated successfully');
+        // Force refresh by fetching the event again
+        setTimeout(() => {
+          dispatch(fetchEvents());
+        }, 500);
+      } else if (result.error) {
+        console.error('Failed to update rating:', result.error);
+      }
+    }).catch((error) => {
+      console.error('Error updating rating:', error);
+    });
     
     setEditingRating(null);
   };
