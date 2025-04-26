@@ -48,7 +48,7 @@ export const defaultUsers: User[] = [
   { id: '10', name: 'Patti' },
   { id: '11', name: 'James' },
   { id: '12', name: 'Moe' },
-  { id: '13', name: 'Venessa' },
+  { id: '13', name: 'Vanessa' },
   { id: '14', name: 'Vivek' }
 ];
 
