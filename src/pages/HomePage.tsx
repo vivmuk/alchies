@@ -32,18 +32,43 @@ const HomePage: React.FC = () => {
   
   useEffect(() => {
     if (status === 'idle') {
+      console.log('HomePage: Dispatching fetchEvents');
       dispatch(fetchEvents());
     }
-  }, [status, dispatch]);
-  
-  const upcomingEvents = sortEventsByDate(events.filter(event => {
-    if (!event || event.isArchived) return false;
     
-    // Parse date properly to avoid timezone issues
-    const eventDate = parseISO(event.date);
-    const today = new Date();
-    return eventDate >= today;
+    // Additionally, if we have events but they're not showing up, log them
+    if (status === 'succeeded' && events.length > 0) {
+      console.log('Events in Redux store:', events.length);
+      console.log('First event example:', events[0]);
+    }
+  }, [status, dispatch, events.length]);
+  
+  useEffect(() => {
+    // Force fetch on component mount regardless of status
+    console.log('HomePage: Initial fetchEvents call');
+    dispatch(fetchEvents());
+  }, [dispatch]);
+  
+  const upcomingEvents = sortEventsByDate(events.filter((event: Event) => {
+    if (!event || event.isArchived) {
+      return false;
+    }
+    
+    try {
+      // Parse date properly to avoid timezone issues
+      const eventDate = parseISO(event.date);
+      const today = new Date();
+      return eventDate >= today;
+    } catch (error) {
+      console.error('Error parsing event date:', error, 'Event:', event);
+      return false;
+    }
   }));
+  
+  // Log filtered events
+  useEffect(() => {
+    console.log('Upcoming events count:', upcomingEvents.length);
+  }, [upcomingEvents.length]);
   
   // Toggle dark mode
   const toggleDarkMode = () => {

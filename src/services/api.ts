@@ -13,19 +13,34 @@ const api = {
     // Get all events
     getAll: async (): Promise<Event[]> => {
       try {
+        console.log('Executing Firestore query for events collection...');
+        
         // Query events collection, ordered by date
         const eventsQuery = query(eventsCollection, orderBy('date', 'asc'));
         const querySnapshot = await getDocs(eventsQuery);
         
-        // Convert the query snapshot to an array of events
-        const events = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Event[];
+        console.log('Query executed successfully, docs count:', querySnapshot.docs.length);
         
+        // Convert the query snapshot to an array of events
+        const events = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log(`Processing doc ${doc.id}, data:`, data);
+          
+          return {
+            id: doc.id,
+            ...data
+          } as Event;
+        });
+        
+        console.log('Events processed:', events.length);
         return events;
       } catch (error) {
         console.error('Error fetching events:', error);
+        if (error instanceof Error) {
+          console.error('Error details:', error.message);
+          console.error('Error stack:', error.stack);
+        }
+        // Return empty array instead of throwing to prevent app crashes
         return [];
       }
     },

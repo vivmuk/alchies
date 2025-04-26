@@ -79,9 +79,16 @@ export const fetchEvents = createAsyncThunk(
   'events/fetchEvents',
   async () => {
     try {
-      return await api.events.getAll();
+      console.log('Fetching events from Firestore...');
+      const events = await api.events.getAll();
+      console.log('Events fetched successfully:', events.length, 'events found');
+      return events;
     } catch (error) {
       console.error('Failed to fetch events:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       throw error;
     }
   }
