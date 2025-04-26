@@ -154,57 +154,12 @@ export const uploadEventImage = createAsyncThunk(
 // New action to delete an event (permanent delete)
 export const deleteEvent = createAsyncThunk(
   'events/deleteEvent',
-  async (eventId: string) => {
+  async (id: string) => {
     try {
-      await api.events.delete(eventId);
-      return eventId;
+      await api.events.delete(id);
+      return id;
     } catch (error) {
       console.error('Failed to delete event:', error);
-      throw error;
-    }
-  }
-);
-
-// Comment out the updateEvent section:
-// export const updateEvent = createAsyncThunk(
-//   'events/updateEvent',
-//   async ({ id, updates }: { id: string, updates: Partial<Event> }) => {
-//     try {
-//       const updatedEvent = await api.events.update(id, updates);
-//       return updatedEvent;
-//     } catch (error) {
-//       console.error('Failed to update event:', error);
-//       throw error;
-//     }
-//   }
-// );
-
-export const updateRating = createAsyncThunk(
-  'events/updateRating',
-  async ({ eventId, userId, rating }: { eventId: string, userId: string, rating: number | null }) => {
-    try {
-      const event = await api.events.getById(eventId);
-      
-      // Find the RSVP
-      const existingRSVPIndex = event.rsvps.findIndex(r => r.userId === userId);
-      
-      if (existingRSVPIndex >= 0) {
-        // Update the rating
-        event.rsvps[existingRSVPIndex].rating = rating;
-        
-        // Update the event on the server
-        await api.events.update(eventId, { rsvps: event.rsvps });
-        
-        return { 
-          eventId, 
-          userId, 
-          rating 
-        };
-      } else {
-        throw new Error('RSVP not found');
-      }
-    } catch (error) {
-      console.error('Failed to update rating:', error);
       throw error;
     }
   }
@@ -269,17 +224,30 @@ const eventsSlice = createSlice({
           event.updatedAt = new Date().toISOString();
         }
       })
-      .addCase(updateRating.fulfilled, (state, action) => {
-        const { eventId, userId, rating } = action.payload;
-        const event = state.events.find(event => event.id === eventId);
-        
-        if (event) {
-          const rsvp = event.rsvps.find(r => r.userId === userId);
-          if (rsvp) {
-            rsvp.rating = rating;
-            event.updatedAt = new Date().toISOString();
-          }
+      .addCase(updateEvent.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(updateEvent.fulfilled, (state, action) => {
+        state.status = 'idle';
+        const index = state.events.findIndex(event => event.id === action.payload.id);
+        if (index !== -1) {
+          state.events[index] = action.payload;
         }
+      })
+      .addCase(updateEvent.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to update event';
+      })
+      .addCase(deleteEvent.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(deleteEvent.fulfilled, (state, action) => {
+        state.status = 'idle';
+        state.events = state.events.filter(event => event.id !== action.payload);
+      })
+      .addCase(deleteEvent.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to delete event';
       })
       .addCase(uploadEventImage.fulfilled, (state, action) => {
         const { eventId, imageUrl } = action.payload;
@@ -288,15 +256,6 @@ const eventsSlice = createSlice({
         if (event) {
           event.imageUrl = imageUrl;
           event.updatedAt = new Date().toISOString();
-        }
-      })
-      .addCase(deleteEvent.fulfilled, (state, action) => {
-        state.events = state.events.filter(event => event.id !== action.payload);
-      })
-      .addCase(updateEvent.fulfilled, (state, action) => {
-        const index = state.events.findIndex(event => event.id === action.payload.id);
-        if (index !== -1) {
-          state.events[index] = action.payload;
         }
       });
   }
