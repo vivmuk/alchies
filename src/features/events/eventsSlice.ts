@@ -165,6 +165,38 @@ export const deleteEvent = createAsyncThunk(
   }
 );
 
+// Add back the updateRating export
+export const updateRating = createAsyncThunk(
+  'events/updateRating',
+  async ({ eventId, userId, rating }: { eventId: string, userId: string, rating: number | null }) => {
+    try {
+      const event = await api.events.getById(eventId);
+      
+      // Find the RSVP
+      const existingRSVPIndex = event.rsvps.findIndex(r => r.userId === userId);
+      
+      if (existingRSVPIndex >= 0) {
+        // Update the rating
+        event.rsvps[existingRSVPIndex].rating = rating;
+        
+        // Update the event on the server
+        await api.events.update(eventId, { rsvps: event.rsvps });
+        
+        return { 
+          eventId, 
+          userId, 
+          rating 
+        };
+      } else {
+        throw new Error('RSVP not found');
+      }
+    } catch (error) {
+      console.error('Failed to update rating:', error);
+      throw error;
+    }
+  }
+);
+
 const eventsSlice = createSlice({
   name: 'events',
   initialState,
@@ -222,6 +254,18 @@ const eventsSlice = createSlice({
           }
           
           event.updatedAt = new Date().toISOString();
+        }
+      })
+      .addCase(updateRating.fulfilled, (state, action) => {
+        const { eventId, userId, rating } = action.payload;
+        const event = state.events.find(event => event.id === eventId);
+        
+        if (event) {
+          const rsvp = event.rsvps.find(r => r.userId === userId);
+          if (rsvp) {
+            rsvp.rating = rating;
+            event.updatedAt = new Date().toISOString();
+          }
         }
       })
       .addCase(updateEvent.pending, (state) => {
