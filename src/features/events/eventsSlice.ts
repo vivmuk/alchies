@@ -49,7 +49,8 @@ export const defaultUsers: User[] = [
   { id: '11', name: 'James' },
   { id: '12', name: 'Moe' },
   { id: '13', name: 'Vanessa' },
-  { id: '14', name: 'Vivek' }
+  { id: '14', name: 'Vivek' },
+  { id: '15', name: 'Baby Emmi', avatar: 'https://i.pravatar.cc/150?img=15' }
 ];
 
 // Helper function to create default RSVPs with undecided status
