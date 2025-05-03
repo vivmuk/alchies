@@ -259,6 +259,12 @@ const eventsSlice = createSlice({
         
         // Call the API to update the event
         api.events.update(action.payload, { isArchived: true })
+          .then(() => {
+            // Refresh events after successful archive
+            api.events.getAll().then(events => {
+              state.events = events;
+            });
+          })
           .catch(error => console.error('Failed to archive event:', error));
       }
     },
@@ -270,6 +276,12 @@ const eventsSlice = createSlice({
         
         // Call the API to update the event
         api.events.update(action.payload, { isArchived: false })
+          .then(() => {
+            // Refresh events after successful unarchive
+            api.events.getAll().then(events => {
+              state.events = events;
+            });
+          })
           .catch(error => console.error('Failed to unarchive event:', error));
       }
     }
