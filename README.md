@@ -13,6 +13,12 @@ A social event planning application with Netlify serverless functions for backen
 - Permanently delete events when needed
 - Mobile-friendly UI with dark mode support
 - No login required - anyone can update events
+- Visual status indicators for events (upcoming, in progress, completed)
+- Google Maps integration for locations
+- Expense tracking for events
+- Memories map view of all visited locations
+- Enhanced UI with customizable accent colors
+- Breadcrumb navigation for better context
 
 ## Default Users
 

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './app/store';
 import './App.css';
+import { ThemeProvider } from './theme/ThemeContext';
 
 // Import pages
 import HomePage from './pages/HomePage';
@@ -14,18 +15,20 @@ import ProfilePage from './pages/ProfilePage';
 function App() {
   return (
     <Provider store={store}>
-      <Router>
-        <div className="App">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/create" element={<CreateEventPage />} />
-            <Route path="/event/:id" element={<EventDetailsPage />} />
-            <Route path="/edit-event/:id" element={<CreateEventPage />} />
-            <Route path="/memories" element={<MemoriesPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
-        </div>
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <div className="App">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/create" element={<CreateEventPage />} />
+              <Route path="/event/:id" element={<EventDetailsPage />} />
+              <Route path="/edit-event/:id" element={<CreateEventPage />} />
+              <Route path="/memories" element={<MemoriesPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Routes>
+          </div>
+        </Router>
+      </ThemeProvider>
     </Provider>
   );
 }

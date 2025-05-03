@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isBefore, isAfter, isSameDay } from 'date-fns';
 import { Event } from '../features/events/eventsSlice';
 import ImageWithFallback from './ImageWithFallback';
 
@@ -25,21 +25,59 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   const eventDate = parseISO(date);
   const formattedDate = format(eventDate, 'EEE, MMM d, yyyy');
   
-  // Calculate if event is today - fixed to handle timezone issues
   const today = new Date();
-  const isToday = 
-    eventDate.getDate() === today.getDate() &&
-    eventDate.getMonth() === today.getMonth() &&
-    eventDate.getFullYear() === today.getFullYear();
   
-  // Calculate if event is within next 3 days - fixed to avoid timezone issues
-  const isUpcoming = eventDate.getTime() - today.getTime() < 3 * 24 * 60 * 60 * 1000;
+  // Enhanced event status logic
+  const isToday = isSameDay(eventDate, today);
+  const isPast = isBefore(eventDate, today) && !isToday;
+  const isFuture = isAfter(eventDate, today);
+  
+  // For "in progress" status - check if event is today and current time is between start and end
+  const eventStartTime = time.split('-')[0]?.trim();
+  const [startHour, startMinute] = eventStartTime ? eventStartTime.split(':').map(t => parseInt(t, 10)) : [0, 0];
+  
+  const eventStart = new Date(today);
+  eventStart.setHours(startHour || 0, startMinute || 0, 0);
+  
+  // Assume events last 2 hours by default if no end time provided
+  let eventEnd;
+  if (time.includes('-')) {
+    const eventEndTime = time.split('-')[1]?.trim();
+    const [endHour, endMinute] = eventEndTime ? eventEndTime.split(':').map(t => parseInt(t, 10)) : [startHour + 2, startMinute];
+    eventEnd = new Date(today);
+    eventEnd.setHours(endHour, endMinute, 0);
+  } else {
+    eventEnd = new Date(eventStart);
+    eventEnd.setHours(eventStart.getHours() + 2);
+  }
+  
+  const isInProgress = isToday && today >= eventStart && today <= eventEnd;
+  const isUpcoming = isFuture && today.getTime() - eventDate.getTime() < 3 * 24 * 60 * 60 * 1000;
+  
+  // Get status color for card border
+  const getStatusColor = () => {
+    if (status === 'cancelled') return 'border-red-400 dark:border-red-600';
+    if (isInProgress) return 'border-green-400 dark:border-green-600';
+    if (isToday) return 'border-yellow-400 dark:border-yellow-600';
+    if (isUpcoming) return 'border-blue-400 dark:border-blue-600';
+    if (isPast) return 'border-gray-300 dark:border-gray-700';
+    return 'border-gray-100 dark:border-gray-800';
+  };
   
   return (
     <div
-      className="bg-white dark:bg-dark-card rounded-xl shadow-md hover:shadow-lg overflow-hidden cursor-pointer border border-gray-100 dark:border-gray-800 transition-all duration-300 ease-in-out"
+      className={`bg-white dark:bg-dark-card rounded-xl shadow-md hover:shadow-lg overflow-hidden cursor-pointer border-2 ${getStatusColor()} transition-all duration-300 ease-in-out`}
       onClick={onClick}
     >
+      {/* Status Indicator Bar at the top */}
+      <div className={`h-1 w-full ${
+        status === 'cancelled' ? 'bg-red-500' :
+        isInProgress ? 'bg-green-500' :
+        isToday ? 'bg-yellow-500' :
+        isUpcoming ? 'bg-blue-500' :
+        isPast ? 'bg-gray-400' : 'bg-gray-200'
+      }`}></div>
+      
       <div className="flex flex-col sm:flex-row">
         {imageUrl ? (
           <div className="w-full sm:w-1/3 h-40 sm:h-auto overflow-hidden">
@@ -65,11 +103,17 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
                 {status === 'cancelled' && (
                   <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-full text-xs font-medium">Cancelled</span>
                 )}
-                {isToday && (
-                  <span className="px-2 py-1 bg-primary/10 dark:bg-primary/20 text-primary rounded-full text-xs font-medium">Today</span>
+                {isInProgress && (
+                  <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full text-xs font-medium animate-pulse">In Progress</span>
                 )}
-                {!isToday && isUpcoming && (
-                  <span className="px-2 py-1 bg-secondary/10 dark:bg-secondary/20 text-secondary rounded-full text-xs font-medium">Upcoming</span>
+                {isToday && !isInProgress && (
+                  <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-full text-xs font-medium">Today</span>
+                )}
+                {isUpcoming && !isToday && (
+                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full text-xs font-medium">Upcoming</span>
+                )}
+                {isPast && (
+                  <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 rounded-full text-xs font-medium">Completed</span>
                 )}
               </div>
             </div>

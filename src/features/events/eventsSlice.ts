@@ -17,6 +17,16 @@ export interface RSVP {
   rating?: number | null;
 }
 
+export interface Expense {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+  paidBy: string; // User ID
+  receipt?: string; // URL to receipt image
+  category?: 'food' | 'drinks' | 'transport' | 'activities' | 'accommodation' | 'other';
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -32,6 +42,14 @@ export interface Event {
   updatedAt: string;
   isArchived: boolean;
   shareableLink?: string;
+  expenses?: Expense[];
+  totalExpense?: number;
+  locationDetails?: {
+    placeId?: string;
+    latitude?: number;
+    longitude?: number;
+    formattedAddress?: string;
+  };
 }
 
 // Default users list
@@ -247,6 +265,76 @@ export const updateRating = createAsyncThunk(
   }
 );
 
+export const addExpense = createAsyncThunk(
+  'events/addExpense',
+  async ({ eventId, expense }: { eventId: string, expense: Omit<Expense, 'id'> }) => {
+    try {
+      // Get the current event
+      const event = await api.events.getById(eventId);
+      
+      if (!event) {
+        throw new Error(`Event with ID ${eventId} not found`);
+      }
+      
+      // Create a new expense with an ID
+      const newExpense: Expense = {
+        ...expense,
+        id: Date.now().toString()
+      };
+      
+      // Add the expense to the event
+      const expenses = event.expenses || [];
+      const updatedExpenses = [...expenses, newExpense];
+      
+      // Update the event on the server
+      await api.events.update(eventId, { expenses: updatedExpenses });
+      
+      return { eventId, expense: newExpense, expenses: updatedExpenses };
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+      throw error;
+    }
+  }
+);
+
+export const updateTotalExpense = createAsyncThunk(
+  'events/updateTotalExpense',
+  async ({ eventId, totalExpense }: { eventId: string, totalExpense: number }) => {
+    try {
+      // Update the event on the server
+      await api.events.update(eventId, { totalExpense });
+      
+      return { eventId, totalExpense };
+    } catch (error) {
+      console.error('Failed to update total expense:', error);
+      throw error;
+    }
+  }
+);
+
+export const updateLocationDetails = createAsyncThunk(
+  'events/updateLocationDetails',
+  async ({ eventId, locationDetails }: { 
+    eventId: string, 
+    locationDetails: {
+      placeId?: string;
+      latitude?: number;
+      longitude?: number;
+      formattedAddress?: string;
+    } 
+  }) => {
+    try {
+      // Update the event on the server
+      await api.events.update(eventId, { locationDetails });
+      
+      return { eventId, locationDetails };
+    } catch (error) {
+      console.error('Failed to update location details:', error);
+      throw error;
+    }
+  }
+);
+
 const eventsSlice = createSlice({
   name: 'events',
   initialState,
@@ -368,6 +456,33 @@ const eventsSlice = createSlice({
         
         if (event) {
           event.imageUrl = imageUrl;
+          event.updatedAt = new Date().toISOString();
+        }
+      })
+      .addCase(addExpense.fulfilled, (state, action) => {
+        const { eventId, expense, expenses } = action.payload;
+        const event = state.events.find(event => event.id === eventId);
+        
+        if (event) {
+          event.expenses = expenses;
+          event.updatedAt = new Date().toISOString();
+        }
+      })
+      .addCase(updateTotalExpense.fulfilled, (state, action) => {
+        const { eventId, totalExpense } = action.payload;
+        const event = state.events.find(event => event.id === eventId);
+        
+        if (event) {
+          event.totalExpense = totalExpense;
+          event.updatedAt = new Date().toISOString();
+        }
+      })
+      .addCase(updateLocationDetails.fulfilled, (state, action) => {
+        const { eventId, locationDetails } = action.payload;
+        const event = state.events.find(event => event.id === eventId);
+        
+        if (event) {
+          event.locationDetails = locationDetails;
           event.updatedAt = new Date().toISOString();
         }
       });
