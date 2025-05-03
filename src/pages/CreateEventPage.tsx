@@ -338,8 +338,11 @@ const CreateEventPage: React.FC = () => {
             <LocationSearch 
               initialValue={location}
               onLocationSelect={handleLocationSelect}
-              placeholder="Search for a location"
+              placeholder="Search for a specific address or place name"
             />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Enter a specific location (e.g., "Nowon Korean Burgers, New York" rather than just "Nowon Korean Burgers")
+            </p>
           </div>
           
           {/* Organizer */}

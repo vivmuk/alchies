@@ -394,7 +394,20 @@ const EventDetailsPage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span>{event.location}</span>
+            <div className="flex flex-col">
+              <span>{event.location}</span>
+              <button 
+                onClick={() => {
+                  const url = event.locationDetails?.latitude && event.locationDetails?.longitude
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${event.locationDetails.latitude},${event.locationDetails.longitude}`
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
+                  window.open(url, '_blank');
+                }}
+                className="text-xs text-primary hover:text-indigo-700 mt-1"
+              >
+                View on Google Maps
+              </button>
+            </div>
           </div>
           
           {/* Map Display */}

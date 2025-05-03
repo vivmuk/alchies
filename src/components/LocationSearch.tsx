@@ -104,7 +104,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
       <input
         ref={inputRef}
         type="text"
-        className="w-full rounded-lg pl-10 py-3 bg-white dark:bg-dark-input border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400"
+        className="w-full rounded-lg pl-10 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400"
         placeholder={placeholder}
         value={inputValue}
         onChange={handleInputChange}

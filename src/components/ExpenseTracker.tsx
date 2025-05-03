@@ -136,7 +136,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
                   name="amount"
                   value={newExpense.amount}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg px-3 py-2 bg-white dark:bg-dark-input border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  className="w-full rounded-lg px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
                   placeholder="0.00"
                   step="0.01"
                   min="0"
@@ -150,7 +150,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
                   name="date"
                   value={newExpense.date}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg px-3 py-2 bg-white dark:bg-dark-input border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  className="w-full rounded-lg px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
                   required
                 />
               </div>
@@ -160,7 +160,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
                   name="category"
                   value={newExpense.category}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg px-3 py-2 bg-white dark:bg-dark-input border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  className="w-full rounded-lg px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
                 >
                   {categories.map(category => (
                     <option key={category.value} value={category.value}>
@@ -175,7 +175,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
                   name="paidBy"
                   value={newExpense.paidBy}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg px-3 py-2 bg-white dark:bg-dark-input border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  className="w-full rounded-lg px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
                 >
                   {defaultUsers.map(user => (
                     <option key={user.id} value={user.id}>
@@ -191,7 +191,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
                 name="description"
                 value={newExpense.description}
                 onChange={handleInputChange}
-                className="w-full rounded-lg px-3 py-2 bg-white dark:bg-dark-input border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                className="w-full rounded-lg px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
                 rows={2}
                 required
               ></textarea>
@@ -226,7 +226,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({
                 type="number"
                 value={newTotalExpense}
                 onChange={(e) => setNewTotalExpense(parseFloat(e.target.value) || 0)}
-                className="w-full rounded-lg px-3 py-2 bg-white dark:bg-dark-input border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                className="w-full rounded-lg px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 dark:focus:ring-indigo-400"
                 placeholder="0.00"
                 step="0.01"
                 min="0"
