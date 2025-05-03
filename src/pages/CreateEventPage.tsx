@@ -8,6 +8,7 @@ import BottomNavigation from '../components/BottomNavigation';
 import api from '../services/api';
 import ImageWithFallback from '../components/ImageWithFallback';
 import { parseISO, format } from 'date-fns';
+import LocationSearch, { LocationData } from '../components/LocationSearch';
 
 // Default organizer for new events
 const defaultOrganizer: User = defaultUsers[0];
@@ -47,6 +48,13 @@ const CreateEventPage: React.FC = () => {
     }))
   );
 
+  // Add state for location details
+  const [locationDetails, setLocationDetails] = useState<{
+    placeId?: string;
+    latitude?: number;
+    longitude?: number;
+  } | undefined>(undefined);
+
   // Load existing event data if in edit mode
   useEffect(() => {
     if (existingEvent) {
@@ -58,6 +66,10 @@ const CreateEventPage: React.FC = () => {
       setStatus(existingEvent.status || 'active');
       setOrganizer(existingEvent.organizer);
       setAttendees(existingEvent.rsvps);
+      
+      if (existingEvent.locationDetails) {
+        setLocationDetails(existingEvent.locationDetails);
+      }
       
       if (existingEvent.imageUrl) {
         setExistingImageUrl(existingEvent.imageUrl);
@@ -146,6 +158,16 @@ const CreateEventPage: React.FC = () => {
     }
   };
   
+  // Handle location selection
+  const handleLocationSelect = (locationData: LocationData) => {
+    setLocation(locationData.address);
+    setLocationDetails({
+      placeId: locationData.placeId,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude
+    });
+  };
+  
   // Handle form submission
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -171,7 +193,8 @@ const CreateEventPage: React.FC = () => {
         imageUrl,
         organizer,
         rsvps: attendees,
-        status
+        status,
+        locationDetails
       };
       
       let resultAction;
@@ -312,14 +335,10 @@ const CreateEventPage: React.FC = () => {
             <label htmlFor="location" className="block text-sm font-medium">
               Location*
             </label>
-            <input
-              type="text"
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-dark-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/40 focus:border-primary/40 outline-none"
-              placeholder="Address or place name"
-              required
+            <LocationSearch 
+              initialValue={location}
+              onLocationSelect={handleLocationSelect}
+              placeholder="Search for a location"
             />
           </div>
           

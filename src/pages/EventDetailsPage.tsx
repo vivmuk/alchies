@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns';
 import BottomNavigation from '../components/BottomNavigation';
 import ImageWithFallback from '../components/ImageWithFallback';
 import updateEvent from '../features/events/updateEvent';
+import MapDisplay from '../components/MapDisplay';
 
 const EventDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -395,6 +396,20 @@ const EventDetailsPage: React.FC = () => {
             </svg>
             <span>{event.location}</span>
           </div>
+          
+          {/* Map Display */}
+          {event.location && (
+            <div className="mt-4 mb-6">
+              <MapDisplay 
+                address={event.location}
+                latitude={event.locationDetails?.latitude}
+                longitude={event.locationDetails?.longitude}
+                title={event.title}
+                height="200px"
+                className="rounded-xl overflow-hidden shadow-md"
+              />
+            </div>
+          )}
           
           <div className="flex items-center text-gray-600 dark:text-gray-300 mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
