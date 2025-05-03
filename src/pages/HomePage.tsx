@@ -81,8 +81,8 @@ const HomePage: React.FC = () => {
     });
   }, [events.length, allEvents.length, upcomingEvents.length]);
   
-  // TEMPORARY: Display all events for testing
-  const displayEvents = allEvents;
+  // Use upcomingEvents instead of allEvents to exclude archived events
+  const displayEvents = upcomingEvents;
   
   // Toggle dark mode
   const toggleDarkMode = () => {
